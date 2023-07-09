@@ -14,12 +14,15 @@ class planet:
 		self.eccentricity = eccentricity
 		self.inclination = inclination
 
-	def plot_orbit(self):
+	def plot_orbit(self, fig, ax, label=False):
 		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
 		e = self.eccentricity
 		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-		plt.plot(r * np.cos(theta), r * np.sin(theta), label=self.name)
+		if label is True:
+			plt.plot(r * np.cos(theta), r * np.sin(theta), label=self.name)
+		else:
+			plt.plot(r * np.cos(theta), r * np.sin(theta))
 
 	def animate_orbit(self):
 		frames = int(1000 * 50 / self.period)
@@ -32,16 +35,15 @@ class planet:
 		y = r * np.sin(theta)
 		fig, ax = plt.subplots()
 		ax.scatter(0, 0, s=100, c="#FFE100", marker="x", label="Star")
-		theta_temp = np.linspace(0, 2 * np.pi, 1000)
-		r = a * (1 - e ** 2) / (1 - e * np.cos(theta_temp))
-		ax.plot(r * np.cos(theta_temp), r * np.sin(theta_temp))
-		p = ax.scatter(x, y, c="b", s=5, label=self.name)
+		self.plot_orbit(fig, ax)
+		p = ax.scatter(x, y, c="b", s=10, label=self.name)
 		ax.set(
 			aspect="equal",
 			xlabel="x / AU",
 			ylabel="y / AU",
 			xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-			ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2])
+			ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+			facecolor="#333333")
 		ax.legend()
 
 		def update(frame):
@@ -67,9 +69,10 @@ class planetary_system:
 		self.planets = planets
 
 	def plot_orbits(self):
+		fig, ax = plt.subplots()
 		plt.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
 		for planet in self.planets:
-			planet.plot_orbit()
+			planet.plot_orbit(fig, ax, label=True)
 		plt.title(self.name)
 		plt.xlabel("Major axis / AU")
 		plt.ylabel("Minor axis / AU")
@@ -89,20 +92,22 @@ class planetary_system:
 		fig, ax = plt.subplots()
 		ax.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
 		for planet in self.planets:
+			planet.plot_orbit(fig, ax)
 			a = planet.sm_axis
 			e = planet.eccentricity
 			theta = 2 * np.pi * time[0] / planet.period
 			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
 			x = r * np.cos(theta)
 			y = r * np.sin(theta)
-			p = ax.scatter(x, y, s=5, label=planet.name)
+			p = ax.scatter(x, y, s=10, label=planet.name)
 			plots.append(p)
 			ax.set(
 				aspect="equal",
 				xlabel="x / AU",
 				ylabel="y / AU",
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2])
+				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				facecolor="#333333")
 			ax.legend()
 
 		def update(frame):
