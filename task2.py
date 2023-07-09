@@ -3,8 +3,5 @@
 from planets import *
 
 
-inner = planetary_system("Inner planets", "Sun", inner)
-outer = planetary_system("Outer planets", "Sun", outer)
-
-inner.plot_orbits()
-outer.plot_orbits()
+inner_planets.plot_orbits()
+outer_planets.plot_orbits()

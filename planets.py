@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.animation import FuncAnimation
 
 
 # units: distance in au, time in years
@@ -14,11 +15,49 @@ class planet:
 		self.inclination = inclination
 
 	def plot_orbit(self):
-		t = np.linspace(0, 2 * np.pi, 1000)
+		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
 		e = self.eccentricity
-		r = a * (1 - e ** 2) / (1 - e * np.cos(t))
-		plt.plot(r * np.cos(t), r * np.sin(t), label=self.name)
+		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+		plt.plot(r * np.cos(theta), r * np.sin(theta), label=self.name)
+
+	def animate_orbit(self):
+		frames = int(1000 * 50 / self.period)
+		a = self.sm_axis
+		e = self.eccentricity
+		time = np.linspace(0, 1000, frames + 1)
+		theta = 2 * np.pi * time[0] / self.period
+		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+		x = r * np.cos(theta)
+		y = r * np.sin(theta)
+		fig, ax = plt.subplots()
+		ax.scatter(0, 0, s=100, c="#FFE100", marker="x", label="Star")
+		theta_temp = np.linspace(0, 2 * np.pi, 1000)
+		r = a * (1 - e ** 2) / (1 - e * np.cos(theta_temp))
+		ax.plot(r * np.cos(theta_temp), r * np.sin(theta_temp))
+		p = ax.scatter(x, y, c="b", s=5, label=self.name)
+		ax.set(
+			aspect="equal",
+			xlabel="x / AU",
+			ylabel="y / AU",
+			xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+			ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2])
+		ax.legend()
+
+		def update(frame):
+			ax.set(title=f"{self.name}: t={time[frame]:.3f} Julian years")
+			theta = 2 * np.pi * time[frame] / self.period
+			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+			x = r * np.cos(theta)
+			y = r * np.sin(theta)
+			data = np.stack([x, y]).T
+			p.set_offsets(data)
+			return p
+
+		# i = 1000 / (self.period * 100)  # convert to ms
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		plt.grid(True)
+		plt.show()
 
 
 class planetary_system:
@@ -39,6 +78,52 @@ class planetary_system:
 		plt.grid(True)
 		plt.show()
 
+	# takes argument of which planet the years should be counted in
+	# expects a planet object
+	def animate_orbits(self, planet_y):  # 1 year = 1 second
+		period = planet_y.period
+		frames = 50 * 1000
+		lim = period * 1000
+		time = np.linspace(0, lim, frames + 1)
+		plots = []
+		fig, ax = plt.subplots()
+		ax.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		for planet in self.planets:
+			a = planet.sm_axis
+			e = planet.eccentricity
+			theta = 2 * np.pi * time[0] / planet.period
+			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+			x = r * np.cos(theta)
+			y = r * np.sin(theta)
+			p = ax.scatter(x, y, s=5, label=planet.name)
+			plots.append(p)
+			ax.set(
+				aspect="equal",
+				xlabel="x / AU",
+				ylabel="y / AU",
+				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2])
+			ax.legend()
+
+		def update(frame):
+			ax.set(
+				title=f"{self.name}: t={time[frame] / period:.3f} {planet_y.name} years")
+			for c, planet in enumerate(self.planets):
+				a = planet.sm_axis
+				e = planet.eccentricity
+				theta = 2 * np.pi * time[frame] / planet.period
+				r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+				x = r * np.cos(theta)
+				y = r * np.sin(theta)
+				data = np.stack([x, y]).T
+				plots[c].set_offsets(data)
+			return tuple(plots)
+
+		# tested optimal interval is 20 ms with 50k frames, where k is a constant
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		plt.grid(True)
+		plt.show()
+
 
 # define solar system planets using "solar system parameters"
 # values from wikipedia
@@ -55,3 +140,6 @@ pluto = planet("Pluto", 39.482, 247.94, 0.2488, 17.16)
 planets = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
 inner = [mercury, venus, earth, mars]
 outer = [jupiter, saturn, uranus, neptune, pluto]
+
+inner_planets = planetary_system("Inner planets", "Sun", inner)
+outer_planets = planetary_system("Outer planets", "Sun", outer)
