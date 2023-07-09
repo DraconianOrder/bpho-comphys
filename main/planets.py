@@ -14,6 +14,7 @@ class planet:
 		self.eccentricity = eccentricity
 		self.inclination = inclination
 
+	# plots line graph of elliptical orbit
 	def plot_orbit(self, fig, ax, label=False):
 		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
@@ -24,6 +25,7 @@ class planet:
 		else:
 			plt.plot(r * np.cos(theta), r * np.sin(theta))
 
+	# animates scatter point according to kepler's laws
 	def animate_orbit(self):
 		frames = int(1000 * 50 / self.period)
 		a = self.sm_axis
@@ -56,7 +58,6 @@ class planet:
 			p.set_offsets(data)
 			return p
 
-		# i = 1000 / (self.period * 100)  # convert to ms
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
 		plt.grid(True)
 		plt.show()
@@ -68,6 +69,7 @@ class planetary_system:
 		self.star = star
 		self.planets = planets
 
+	# plots line graphs of all planets in the system on one axis
 	def plot_orbits(self):
 		fig, ax = plt.subplots()
 		plt.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
@@ -81,6 +83,7 @@ class planetary_system:
 		plt.grid(True)
 		plt.show()
 
+	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
 	def animate_orbits(self, planet_y):  # 1 year = 1 second
