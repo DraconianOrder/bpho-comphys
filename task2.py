@@ -2,6 +2,7 @@
 
 from planets import *
 
+
 inner = planetary_system("Inner planets", "Sun", inner)
 outer = planetary_system("Outer planets", "Sun", outer)
 
