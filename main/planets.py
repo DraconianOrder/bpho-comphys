@@ -6,6 +6,26 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 
 
+# returns true anomaly and heliocentric distance as a function of time
+# solves kepler's equation using kepler's 1621 fixed-point iteration
+def kepler_eq(time, sm_axis, period, eccentricity):
+	n = 2 * np.pi / period  # mean motion
+	M = n * time  # mean anomaly
+
+	# kepler's equation: E = M + eccentricity * sin(E)
+	e = eccentricity
+	E = M
+	for _ in range(10):  # 10 iterations balances accuracy with speed
+		E = M + e * np.sin(E)  # eccentric anomaly
+
+	# true anomaly theta
+	theta = 2 * np.arctan(np.sqrt((1 + e) / (1 - e)) * np.tan(E / 2))
+	a = sm_axis
+	r = a * (1 - e * np.cos(E))  # heliocentric distance
+
+	return theta, r
+
+
 # units: distance in au, time in years
 class planet:
 	def __init__(self, name, sm_axis, period, eccentricity, inclination):
@@ -20,7 +40,7 @@ class planet:
 		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
 		e = self.eccentricity
-		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
 		x = r * np.cos(theta)
 		y = r * np.sin(theta)
 		if label is True:
@@ -34,10 +54,10 @@ class planet:
 		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
 		e = self.eccentricity
-		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-		x = r * np.cos(theta) * np.cos(self.inclination)
+		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination))
 		y = r * np.sin(theta)
-		z = r * np.cos(theta) * np.sin(self.inclination)
+		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination))
 		if label is True:
 			plt.plot(x, y, z, label=self.name)
 		else:
@@ -45,12 +65,15 @@ class planet:
 
 	# animates scatter point according to kepler's laws
 	def animate_orbit(self):
-		frames = int(1000 * 50 / self.period)
+		years = 5
+		i = 20
+		frames = int((1000 / i) * years)
 		a = self.sm_axis
 		e = self.eccentricity
-		time = np.linspace(0, 1000, frames + 1)
-		theta = 2 * np.pi * time[0] / self.period
-		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+		time = np.linspace(0, self.period * years, frames + 1)
+
+		theta, r = kepler_eq(time[0], a, self.period, e)
+
 		x = r * np.cos(theta)
 		y = r * np.sin(theta)
 		fig, ax = plt.subplots()
@@ -68,31 +91,37 @@ class planet:
 
 		def update(frame):
 			ax.set(title=f"{self.name}: t={time[frame]:.3f} Julian years")
-			theta = 2 * np.pi * time[frame] / self.period
-			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+
+			theta, r = kepler_eq(time[frame], a, self.period, e)
+
 			x = r * np.cos(theta)
 			y = r * np.sin(theta)
 			data = np.stack([x, y]).T
 			p.set_offsets(data)
 			return p
 
-		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		anim.save(f"../images/{self.name} Orbit.gif")
 		plt.grid(True)
 		plt.show()
 
 	# animates 3d orbit
 	def animate_3d(self):
-		frames = int(1000 * 50 / self.period)
+		years = 5
+		i = 20
+		frames = int((1000 / i) * years)
 		a = self.sm_axis
 		e = self.eccentricity
-		time = np.linspace(0, 1000, frames + 1)
-		theta = 2 * np.pi * time[0] / self.period
-		r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-		x = r * np.cos(theta) * np.cos(self.inclination)
+		time = np.linspace(0, self.period * years, frames + 1)
+
+		theta, r = kepler_eq(time[0], a, self.period, e)
+
+		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination))
 		y = r * np.sin(theta)
-		z = r * np.cos(theta) * np.sin(self.inclination)
+		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination))
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection="3d")
+		ax.scatter(0, 0, 0, s=100, c="#FFE100", marker="x", label="Star")
 		p = ax.plot(x, y, z, c="b", marker="o", label=self.name)[0]
 		self.plot_orbit_3d(fig, ax)
 		ax.set(
@@ -107,17 +136,19 @@ class planet:
 
 		def update(frame):
 			ax.set(title=f"{self.name}: t={time[frame]:.3f} Julian years")
-			theta = 2 * np.pi * time[frame] / self.period
-			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-			x = r * np.cos(theta) * np.cos(self.inclination)
+
+			theta, r = kepler_eq(time[frame], a, self.period, e)
+
+			x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination))
 			y = r * np.sin(theta)
-			z = r * np.cos(theta) * np.sin(self.inclination)
+			z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination))
 			data = np.stack([x, y]).T
 			p.set_data(data)
 			p.set_3d_properties(z)
 			return p
 
-		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		anim.save(f"../images/{self.name} Orbit 3D.gif")
 		plt.grid(True)
 		plt.show()
 
@@ -147,8 +178,10 @@ class planetary_system:
 	# expects a planet object
 	def animate_orbits(self, planet_y):  # 1 year = 1 second
 		period = planet_y.period
-		frames = 50 * 1000
-		lim = period * 1000
+		years = self.planets[-1].period / period
+		i = 20
+		frames = int((1000 / i) * years)
+		lim = period * years
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig, ax = plt.subplots()
@@ -157,8 +190,9 @@ class planetary_system:
 			planet.plot_orbit(fig, ax)
 			a = planet.sm_axis
 			e = planet.eccentricity
-			theta = 2 * np.pi * time[0] / planet.period
-			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+
 			x = r * np.cos(theta)
 			y = r * np.sin(theta)
 			p = ax.scatter(x, y, s=10, label=planet.name)
@@ -178,23 +212,26 @@ class planetary_system:
 			for c, planet in enumerate(self.planets):
 				a = planet.sm_axis
 				e = planet.eccentricity
-				theta = 2 * np.pi * time[frame] / planet.period
-				r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
 				x = r * np.cos(theta)
 				y = r * np.sin(theta)
 				data = np.stack([x, y]).T
 				plots[c].set_offsets(data)
 			return tuple(plots)
 
-		# tested optimal interval is 20 ms with 50k frames, where k is a constant
-		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		anim.save(f"../images/{self.name} Orbits with {planet_y.name} Years.gif")
 		plt.grid(True)
 		plt.show()
 
 	def animate_orbits_3d(self, planet_y):  # 1 year = 1 second
 		period = planet_y.period
-		frames = 50 * 1000
-		lim = period * 1000
+		years = self.planets[-1].period / period
+		i = 20
+		frames = int((1000 / i) * years)
+		lim = period * years
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig = plt.figure()
@@ -204,11 +241,12 @@ class planetary_system:
 			planet.plot_orbit_3d(fig, ax)
 			a = planet.sm_axis
 			e = planet.eccentricity
-			theta = 2 * np.pi * time[0] / planet.period
-			r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-			x = r * np.cos(theta) * np.cos(planet.inclination)
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+
+			x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination))
 			y = r * np.sin(theta)
-			z = r * np.cos(theta) * np.sin(planet.inclination)
+			z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination))
 			p = ax.scatter(x, y, z, label=planet.name)
 			plots.append(p)
 			ax.set(
@@ -227,20 +265,22 @@ class planetary_system:
 			for c, planet in enumerate(self.planets):
 				a = planet.sm_axis
 				e = planet.eccentricity
-				theta = 2 * np.pi * time[frame] / planet.period
-				r = a * (1 - e ** 2) / (1 - e * np.cos(theta))
-				x = r * np.cos(theta) * np.cos(planet.inclination)
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
+				x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination))
 				y = r * np.sin(theta)
-				z = r * np.cos(theta) * np.sin(planet.inclination)
+				z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination))
 				data = np.stack([x, y]).T
 				plots[c].set_offsets(data)
-				plots[c].set_3d_properties(z, 'z')
+				plots[c].set_3d_properties(z, "z")
 			return tuple(plots)
 
-		# tested optimal interval is 20 ms with 50k frames, where k is a constant
-		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=20)
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		anim.save(f"../images/{self.name} Orbits 3D with {planet_y.name} Years.gif")
 		plt.grid(True)
 		plt.show()
+
 
 # define solar system planets using "solar system parameters"
 # values from wikipedia
@@ -260,7 +300,3 @@ outer = [jupiter, saturn, uranus, neptune, pluto]
 
 inner_planets = planetary_system("Inner planets", "Sun", inner)
 outer_planets = planetary_system("Outer planets", "Sun", outer)
-
-
-# testing
-# pluto.animate_3d()
