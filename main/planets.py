@@ -1,5 +1,7 @@
 # planets
 
+# saving animations requires ffmpeg, otherwise animations can just be displayed
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
@@ -64,7 +66,7 @@ class planet:
 			plt.plot(x, y, z)
 
 	# animates scatter point according to kepler's laws
-	def animate_orbit(self):
+	def animate_orbit(self, f_ext=""):
 		years = 5
 		i = 20
 		frames = int((1000 / i) * years)
@@ -87,7 +89,7 @@ class planet:
 			xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 			ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 			facecolor="#333333")
-		ax.legend()
+		ax.legend(loc="upper right")
 
 		def update(frame):
 			ax.set(title=f"{self.name}: t={time[frame]:.3f} Julian years")
@@ -101,12 +103,14 @@ class planet:
 			return p
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
-		anim.save(f"../images/{self.name} Orbit.gif")
-		plt.grid(True)
-		plt.show()
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		else:
+			anim.save(f"../images/{self.name} Orbit.{f_ext}", writer="ffmpeg")
 
 	# animates 3d orbit
-	def animate_3d(self):
+	def animate_3d(self, f_ext=""):
 		years = 5
 		i = 20
 		frames = int((1000 / i) * years)
@@ -132,7 +136,7 @@ class planet:
 			ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 			zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 			facecolor="#333333")
-		ax.legend()
+		ax.legend(loc="upper right")
 
 		def update(frame):
 			ax.set(title=f"{self.name}: t={time[frame]:.3f} Julian years")
@@ -148,9 +152,11 @@ class planet:
 			return p
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
-		anim.save(f"../images/{self.name} Orbit 3D.gif")
-		plt.grid(True)
-		plt.show()
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		else:
+			anim.save(f"../images/{self.name} Orbit 3D.{f_ext}", writer="ffmpeg")
 
 
 class planetary_system:
@@ -176,7 +182,7 @@ class planetary_system:
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
-	def animate_orbits(self, planet_y):  # 1 year = 1 second
+	def animate_orbits(self, planet_y, f_ext=""):  # 1 year = 1 second
 		period = planet_y.period
 		years = self.planets[-1].period / period
 		i = 20
@@ -204,7 +210,7 @@ class planetary_system:
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				facecolor="#333333")
-			ax.legend()
+			ax.legend(loc="upper right")
 
 		def update(frame):
 			ax.set(
@@ -222,11 +228,15 @@ class planetary_system:
 			return tuple(plots)
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
-		anim.save(f"../images/{self.name} Orbits with {planet_y.name} Years.gif")
-		plt.grid(True)
-		plt.show()
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		else:
+			anim.save(
+				f"../images/{self.name} Orbits with {planet_y.name} Years.{f_ext}",
+				writer="ffmpeg")
 
-	def animate_orbits_3d(self, planet_y):  # 1 year = 1 second
+	def animate_orbits_3d(self, planet_y, f_ext=""):  # 1 year = 1 second
 		period = planet_y.period
 		years = self.planets[-1].period / period
 		i = 20
@@ -257,7 +267,7 @@ class planetary_system:
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				facecolor="#333333")
-			ax.legend()
+			ax.legend(loc="upper right")
 
 		def update(frame):
 			ax.set(
@@ -277,9 +287,86 @@ class planetary_system:
 			return tuple(plots)
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
-		anim.save(f"../images/{self.name} Orbits 3D with {planet_y.name} Years.gif")
-		plt.grid(True)
-		plt.show()
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		else:
+			anim.save(
+				f"../images/{self.name} Orbits 3D with {planet_y.name} Years.{f_ext}",
+				writer="ffmpeg")
+
+	def spirograph(self, planet_y, years=10, f_ext="", line=False):
+		period = planet_y.period
+		years = years * self.planets[-1].period / period
+		i = 20
+		frames = int((1000 / i) * years)
+		lim = period * years
+		time = np.linspace(0, lim, frames + 1)
+		plots = []
+		fig, ax = plt.subplots()
+		ax.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		x_array = []
+		y_array = []
+		for planet in self.planets:
+			if line is True:
+				planet.plot_orbit(fig, ax)
+			a = planet.sm_axis
+			e = planet.eccentricity
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+
+			x = r * np.cos(theta)
+			y = r * np.sin(theta)
+			x_array.append(x)
+			y_array.append(y)
+			p = ax.scatter(x, y, s=20, label=planet.name)
+			plots.append(p)
+			ax.set(
+				aspect="equal",
+				xlabel="x / AU",
+				ylabel="y / AU",
+				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				facecolor="#333333")
+			ax.legend(loc="upper right")
+
+		def update(frame):
+			ax.set(
+				title=f"{self.name}: t={time[frame] / period:.3f} {planet_y.name} years")
+			v = []
+			w = []
+			for c, planet in enumerate(self.planets):
+				a = planet.sm_axis
+				e = planet.eccentricity
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
+				x = r * np.cos(theta)
+				y = r * np.sin(theta)
+				v.append(x)
+				w.append(y)
+				data = np.stack([x, y]).T
+				plots[c].set_offsets(data)
+			for b in range(len(v)):
+				for d in range(len(v)):
+					ax.plot(
+						[v[b], v[d]], [w[b], w[d]], "-w", lw="0.5", alpha=0.2)
+
+			return tuple(plots)
+
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		else:
+			temp = ""
+			for u in self.planets:
+				temp += u.name + "-"
+			temp = temp[:-1]
+			n = planet_y.name
+			anim.save(
+				f"../images/{temp} Spirograph with {n} years.{f_ext}",
+				writer="ffmpeg")
 
 
 # define solar system planets using "solar system parameters"
