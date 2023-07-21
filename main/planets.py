@@ -28,14 +28,22 @@ def kepler_eq(time, sm_axis, period, eccentricity):
 	return theta, r
 
 
-# units: distance in au, time in years
 class planet:
-	def __init__(self, name, sm_axis, period, eccentricity, inclination):
+	def __init__(
+		self,
+		name,  # preferably title case
+		sm_axis,  # in astronomical units, AU
+		period,  # in sidereal/julian years
+		eccentricity,  # should be less than 1
+		inclination,  # in degrees (convert to radians in calculations)
+		true_anomaly  # in degrees (convert to radians in calculations)
+	):
 		self.name = name
 		self.sm_axis = sm_axis
 		self.period = period
 		self.eccentricity = eccentricity
 		self.inclination = inclination
+		self.true_anomaly = true_anomaly
 
 	# plots line graph of elliptical orbit
 	def plot_orbit(self, fig, ax, label=False):
@@ -81,7 +89,7 @@ class planet:
 		fig, ax = plt.subplots()
 		ax.scatter(0, 0, s=100, c="#FFE100", marker="x", label="Star")
 		self.plot_orbit(fig, ax)
-		p = ax.scatter(x, y, c="b", s=10, label=self.name)
+		p = ax.scatter(x, y, c="b", s=20, label=self.name)
 		ax.set(
 			aspect="equal",
 			xlabel="x / AU",
@@ -106,8 +114,17 @@ class planet:
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 3/{self.name} Orbit.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
 		else:
-			anim.save(f"../images/{self.name} Orbit.{f_ext}", writer="ffmpeg")
+			anim.save(
+				f"../images/Task 3/{self.name} Orbit.{f_ext}",
+				writer="ffmpeg")
+		plt.close()
 
 	# animates 3d orbit
 	def animate_3d(self, f_ext=""):
@@ -155,8 +172,17 @@ class planet:
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 4/{self.name} Orbit 3D.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
 		else:
-			anim.save(f"../images/{self.name} Orbit 3D.{f_ext}", writer="ffmpeg")
+			anim.save(
+				f"../images/Task 4/{self.name} Orbit 3D.{f_ext}",
+				writer="ffmpeg")
+		plt.close()
 
 
 class planetary_system:
@@ -178,13 +204,14 @@ class planetary_system:
 		plt.axis("square")
 		plt.grid(True)
 		plt.show()
+		plt.close()
 
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
-	def animate_orbits(self, planet_y, f_ext=""):  # 1 year = 1 second
+	def animate_orbits(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
 		period = planet_y.period
-		years = self.planets[-1].period / period
+		years = yrs * self.planets[-1].period / period
 		i = 20
 		frames = int((1000 / i) * years)
 		lim = period * years
@@ -201,7 +228,7 @@ class planetary_system:
 
 			x = r * np.cos(theta)
 			y = r * np.sin(theta)
-			p = ax.scatter(x, y, s=10, label=planet.name)
+			p = ax.scatter(x, y, s=20, label=planet.name)
 			plots.append(p)
 			ax.set(
 				aspect="equal",
@@ -228,17 +255,29 @@ class planetary_system:
 			return tuple(plots)
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs * self.planets[-1].period / period:.0f} "
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
 		else:
 			anim.save(
-				f"../images/{self.name} Orbits with {planet_y.name} Years.{f_ext}",
+				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}",
 				writer="ffmpeg")
+		plt.close()
 
-	def animate_orbits_3d(self, planet_y, f_ext=""):  # 1 year = 1 second
+	def animate_orbits_3d(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
 		period = planet_y.period
-		years = self.planets[-1].period / period
+		years = yrs * self.planets[-1].period / period
 		i = 20
 		frames = int((1000 / i) * years)
 		lim = period * years
@@ -287,17 +326,29 @@ class planetary_system:
 			return tuple(plots)
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs * self.planets[-1].period / period:.0f} "
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
 		else:
 			anim.save(
-				f"../images/{self.name} Orbits 3D with {planet_y.name} Years.{f_ext}",
+				f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.{f_ext}",
 				writer="ffmpeg")
+		plt.close()
 
-	def spirograph(self, planet_y, years=10, f_ext="", line=False):
+	def spirograph(self, planet_y, yrs=10, f_ext="", line=False):
 		period = planet_y.period
-		years = years * self.planets[-1].period / period
+		years = yrs * self.planets[-1].period / period
 		i = 20
 		frames = int((1000 / i) * years)
 		lim = period * years
@@ -327,7 +378,7 @@ class planetary_system:
 				ylabel="y / AU",
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#333333")
+				facecolor="#000000")
 			ax.legend(loc="upper right")
 
 		def update(frame):
@@ -355,31 +406,100 @@ class planetary_system:
 			return tuple(plots)
 
 		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		temp = ""
+		for u in self.planets:
+			temp += u.name + "-"
+		temp = temp[:-1]
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs * self.planets[-1].period / period:.0f} "
+		v = ""
+		if line is True:
+			v = " and line"
+
 		if f_ext == "":
-			plt.grid(True)
 			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
 		else:
-			temp = ""
-			for u in self.planets:
-				temp += u.name + "-"
-			temp = temp[:-1]
-			n = planet_y.name
 			anim.save(
-				f"../images/{temp} Spirograph with {n} years.{f_ext}",
+				f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.{f_ext}",
 				writer="ffmpeg")
+		plt.close()
 
 
 # define solar system planets using "solar system parameters"
-# values from wikipedia
-mercury = planet("Mercury", 0.387098, 0.240846, 0.205630, 7.005)
-venus = planet("Venus", 0.723332, 0.615198, 0.006772, 3.39458)
-earth = planet("Earth", 1, 1, 0.0167086, 0)
-mars = planet("Mars", 1.52368055, 1.88085, 0.0934, 1.85)
-jupiter = planet("Jupiter", 5.2038, 11.862, 0.0489, 1.303)
-saturn = planet("Saturn", 9.5826, 29.4571, 0.0565, 2.485)
-uranus = planet("Uranus", 19.19126, 84.0205, 0.04717, 0.773)
-neptune = planet("Neptune", 30.07, 164.8, 0.008678, 1.77)
-pluto = planet("Pluto", 39.482, 247.94, 0.2488, 17.16)
+# values from NASA's Horizons System
+# https://ssd.jpl.nasa.gov/horizons/app.html#/
+# at A.D. 2023-Aug-14 00:00:00.0000
+mercury = planet(
+	name="Mercury",
+	sm_axis=0.3870978295665558,
+	period=0.2410108701802479,
+	eccentricity=2.056354954960132E-01,
+	inclination=7.003585469292125E+00,
+	true_anomaly=1.889230396629393E+02)
+venus = planet(
+	name="Venus",
+	sm_axis=0.72333967899011,
+	period=0.615628142197116,
+	eccentricity=6.753028854282829E-03,
+	inclination=3.394360369950776E+00,
+	true_anomaly=1.894673808209864E+02)
+earth = planet(
+	name="Earth",
+	sm_axis=1.00073819677731,
+	period=1.001810605554546,
+	eccentricity=1.604364152762242E-02,
+	inclination=3.099622567228552E-03,
+	true_anomaly=2.186556906492948E+02)
+mars = planet(
+	name="Mars",
+	sm_axis=1.52369722627954,
+	period=1.882146861200281,
+	eccentricity=9.334737917768475E-02,
+	inclination=1.847923133607658E+00,
+	true_anomaly=2.131590190014785E+02)
+jupiter = planet(
+	name="Jupiter",
+	sm_axis=5.202378290208416,
+	period=11.86864846590255,
+	eccentricity=4.833431537183881E-02,
+	inclination=1.303626614600446E+00,
+	true_anomaly=1.886747335398515E+01)
+saturn = planet(
+	name="Saturn",
+	sm_axis=9.57511052966961,
+	period=29.64552878472513,
+	eccentricity=5.409745026803753E-02,
+	inclination=2.488383924364373E+00,
+	true_anomaly=2.442738264723067E+02)
+uranus = planet(
+	name="Uranus",
+	sm_axis=19.2960286599553,
+	period=84.8199448379608,
+	eccentricity=4.411720227915315E-02,
+	inclination=7.721283154484431E-01,
+	true_anomaly=2.441986196273190E+02)
+neptune = planet(
+	name="Neptune",
+	sm_axis=30.27978943893903,
+	period=166.7338026736612,
+	eccentricity=1.450793663505559E-02,
+	inclination=1.768991920111643E+00,
+	true_anomaly=3.275592247377758E+02)
+pluto = planet(
+	name="Pluto",
+	sm_axis=39.11030891229124,
+	period=244.7611191723939,
+	eccentricity=2.442251246317582E-01,
+	inclination=1.710818788574056E+01,
+	true_anomaly=7.675388171731849E+01)
 
 planets = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
 inner = [mercury, venus, earth, mars]
