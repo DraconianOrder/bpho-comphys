@@ -520,9 +520,12 @@ class PlanetarySystem:
 			) as f:
 				print(anim.to_html5_video(), file=f)
 		else:
+			fname = f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.{f_ext}"
 			anim.save(
-				f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.{f_ext}",
+				fname,
 				writer="ffmpeg")
+			plt.close()
+			return fname
 		plt.close()
 
 	def spirograph(self, planet_y, yrs=10, f_ext="", line=False):
@@ -613,9 +616,12 @@ class PlanetarySystem:
 			) as f:
 				print(anim.to_html5_video(), file=f)
 		else:
+			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.{f_ext}"
 			anim.save(
-				f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.{f_ext}",
+				fname,
 				writer="ffmpeg")
+			plt.close()
+			return fname
 		plt.close()
 
 
