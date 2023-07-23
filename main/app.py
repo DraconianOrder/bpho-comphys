@@ -1,19 +1,14 @@
 from kivy.app import App
-from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.properties import ObjectProperty
-from kivy.properties import BooleanProperty
-from kivy.properties import StringProperty
-from kivy.properties import DictProperty
 from kivy.uix.button import Button
-from kivy.uix.accordion import Accordion, AccordionItem
 from kivy.uix.label import Label
 from kivy.uix.checkbox import CheckBox
-from kivy.uix.scrollview import ScrollView
-from kivy.core.window import Window
 from kivy.uix.videoplayer import VideoPlayer
 from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.accordion import Accordion
 
 import planets
 
@@ -94,7 +89,7 @@ class PresetsMenu(BoxLayout):
 		self.submit_btn.bind(on_press=self.submit)
 		self.submit(None)
 
-		self.size_hint_min_y = len(self.children) * 24
+		self.size_hint_min_y = len(self.children) * 40
 
 
 class CustomInput(GridLayout):
@@ -104,12 +99,12 @@ class CustomInput(GridLayout):
 		self.selected = value
 		return self.selected
 
-	def __init__(self, name, ht, f, **kwargs):
+	def __init__(self, name, ht, f=None, **kwargs):
 		super(CustomInput, self).__init__(**kwargs)
 		self.nm = str(name)
 		self.cols = 2
 		self.height = 26
-		self.minimum_height = 26
+		self.minimum_height = 14
 		self.add_widget(Label(text=name))
 		self.txin = TextInput(multiline=False, hint_text=ht, input_filter=f)
 		self.txin.bind(text=self.check)
@@ -191,7 +186,7 @@ class CustomMenu(BoxLayout):
 			except Exception:
 				pass
 		self.add_widget(CustomPlanet(num=len(self.children)), len(self.children))
-		self.size_hint_min_y = len(self.children) * 36 * 7 + self.submit_btn.height
+		self.size_hint_min_y = len(self.children) * 28 * 7 + self.submit_btn.height
 
 	def __init__(self, **kwargs):
 		super(CustomMenu, self).__init__(**kwargs)
@@ -199,14 +194,51 @@ class CustomMenu(BoxLayout):
 		self.spacing = 10
 		self.padding = 20
 
-		# self.add_widget(CustomPlanet())
-
-		self.submit_btn = SubmitBtn(size_hint_y=0.2)
+		self.submit_btn = SubmitBtn(size_hint_y=0.4)
 		self.add_widget(self.submit_btn)
 		self.submit_btn.bind(on_press=self.submit)
 		self.submit(None)
 
-		self.size_hint_min_y = len(self.children) * 36 * 7
+		self.size_hint_min_y = len(self.children) * 28 * 7
+
+
+class AddMenu(BoxLayout):
+	select = {}
+
+	def submit(self, _, **kwargs):
+		self.select = {}
+		for child in self.children[::-1]:
+			try:
+				self.select[child.nm] = child.selected
+			except Exception:
+				pass
+		return self.select
+
+	def __init__(self, **kwargs):
+		super(AddMenu, self).__init__(**kwargs)
+		self.orientation = "vertical"
+		self.spacing = 10
+		self.padding = 20
+
+		self.years = CustomInput("Years", "Number of orbits")
+		self.add_widget(self.years)
+		self.facecolor = CustomInput("Background colour", "e.g. #FFF8E7")
+		self.add_widget(self.facecolor)
+		self.linewidth = CustomInput("Line width", "0 < lw <= 1", "float")
+		self.add_widget(self.linewidth)
+		self.no_ax_label = CheckOption("Hide axes labels")
+		self.add_widget(self.no_ax_label)
+		self.no_legend = CheckOption("Hide legend")
+		self.add_widget(self.no_legend)
+		self.legend_loc = CustomInput("Legend location", "e.g. 'upper right'")
+		self.add_widget(self.legend_loc)
+
+		self.submit_btn = SubmitBtn()
+		self.add_widget(self.submit_btn)
+		self.submit_btn.bind(on_press=self.submit)
+		self.submit(None)
+
+		self.size_hint_min_y = len(self.children) * 48
 
 
 class Viewer(BoxLayout):
@@ -247,13 +279,14 @@ class Viewer(BoxLayout):
 			display.remove(i)
 
 		d = display + t
-		print(display)
+		# print(display)
 		print(d)
 		if presets["Sun"] is True:
-			temp = planets.PlanetarySystem("temp", d[0], d[1:])
+			temp = planets.PlanetarySystem("Custom", d[0], d[1:])
 		else:
-			temp = planets.PlanetarySystem("temp", None, d)
-		f = temp.animate_orbits(d[-1], f_ext="mp4")
+			temp = planets.PlanetarySystem("Custom", None, d)
+		y = temp.planets[-1]
+		f = temp.spirograph(y, 1, f_ext="mp4")
 		self.remove_widget(self.video)
 		self.video = VideoPlayer(source=f, state="play", options={"eos": "loop"})
 		self.add_widget(self.video)
@@ -282,13 +315,39 @@ class Main(Accordion):
 		super(Main, self).__init__(**kwargs)
 
 
+class Sidebar(BoxLayout):
+	def __init__(self, **kwargs):
+		self.orientation = "vertical"
+		self.size_hint = (0.25, 1)
+		super(Sidebar, self).__init__(**kwargs)
+		self.t1 = ToggleButton(text="1", group="tasks")
+		self.t2 = ToggleButton(text="2", group="tasks")
+		self.t3 = ToggleButton(text="3", group="tasks")
+		self.t4 = ToggleButton(text="4", group="tasks")
+		self.t5 = ToggleButton(text="5", group="tasks")
+		self.t6 = ToggleButton(text="6", group="tasks")
+		self.t7 = ToggleButton(text="7", group="tasks")
+		a = [self.t1, self.t2, self.t3, self.t4, self.t5, self.t6, self.t7]
+		for i in a:
+			self.add_widget(i)
+
+
 class Frame(BoxLayout):
 	sidebar = ObjectProperty(None)
 	collapse_btn = ObjectProperty(None)
 	placeholder = ObjectProperty(None)
 
+	def toggle(self, b):
+		b.toggle_sidebar()
+
 	def __init__(self, **kwargs):
 		super(Frame, self).__init__(**kwargs)
+		self.sidebar = Sidebar()
+		self.add_widget(self.sidebar)
+		self.c_btn = CollapseBtn(
+			size_hint=(0.06, 1), on_release=self.toggle, text="<")
+		self.add_widget(self.c_btn)
+		self.add_widget(Main())
 
 
 class OrbitsApp(App):

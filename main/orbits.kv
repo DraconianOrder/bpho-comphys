@@ -2,61 +2,10 @@
 
 
 <Frame>:
-	sidebar: sidebar
-	collapse_btn: collapse_btn
-	placeholder: placeholder
+	# sidebar: sidebar
+	# collapse_btn: collapse_btn
+	# placeholder: placeholder
 	orientation: "horizontal"
-
-	BoxLayout:
-		id: sidebar
-		sb1: sb1
-		sb2: sb2
-		sb3: sb3
-		sb4: sb4
-		sb5: sb5
-		sb6: sb6
-		sb7: sb7
-		orientation: "vertical"
-		size_hint: (0.25, 1)
-
-		ToggleButton:
-			id: sb1
-			text: "Button 1"
-			group: "sidebar"
-			state: "down"
-		ToggleButton:
-			id: sb2
-			text: "Button 2"
-			group: "sidebar"
-		ToggleButton:
-			id: sb3
-			text: "Button 3"
-			group: "sidebar"
-		ToggleButton:
-			id: sb4
-			text: "Button 4"
-			group: "sidebar"
-		ToggleButton:
-			id: sb5
-			text: "Button 5"
-			group: "sidebar"
-		ToggleButton:
-			id: sb6
-			text: "Button 6"
-			group: "sidebar"
-		ToggleButton:
-			id: sb7
-			text: "Button 7"
-			group: "sidebar"
-
-	CollapseBtn:
-		id: collapse_btn
-		size_hint: (0.06, 1)
-		on_release: self.toggle_sidebar()
-		text: "<"
-
-	Main:
-		id: placeholder
 
 
 <Main>:
@@ -91,10 +40,14 @@
 
 	AccordionItem:
 		id: additional
+		add_menu: addm
 		title: "Additional options"
 		min_space: self.accordion.height / 12
-		Label:
-			text: "Placeholder"
+		ScrollView:
+			do_scroll_x: False
+			do_scroll_y: True
+			AddMenu:
+				id: addm
 
 	AccordionItem:
 		id: display
