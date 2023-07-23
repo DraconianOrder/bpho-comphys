@@ -47,12 +47,12 @@ class Star:
 class Planet:
 	def __init__(
 		self,
-		name,  # preferably title case
-		sm_axis,  # in astronomical units, AU
-		period,  # in sidereal/julian years
-		eccentricity,  # should be less than 1
-		inclination,  # in degrees (convert to radians in calculations)
-		true_anomaly  # in degrees (convert to radians in calculations)
+		name="",  # preferably title case
+		sm_axis=1,  # in astronomical units, AU
+		period=1,  # in sidereal/julian years
+		eccentricity=0,  # should be less than 1
+		inclination=0,  # in degrees (convert to radians in calculations)
+		true_anomaly=0  # in degrees (convert to radians in calculations)
 	):
 		self.name = name
 		self.sm_axis = sm_axis
@@ -62,7 +62,7 @@ class Planet:
 		self.true_anomaly = true_anomaly
 
 	# plots line graph of elliptical orbit
-	def plot_orbit(self, fig, ax, label=False):
+	def plot_orbit(self, label=False):
 		theta = np.linspace(0, 2 * np.pi, 1000)
 		a = self.sm_axis
 		e = self.eccentricity
@@ -73,6 +73,35 @@ class Planet:
 			plt.plot(x, y, label=self.name)
 		else:
 			plt.plot(x, y)
+
+	# plots line graph of elliptical orbit
+	def ptol_orbit(
+		self,
+		ax,
+		offset=(0, 0),
+		rt=False,
+		yrs=1,
+		sp=1000,
+		label=False,
+		lw=1,
+		marker=None
+	):
+		a = self.sm_axis
+		e = self.eccentricity
+		time = np.linspace(0, yrs, sp)
+		theta, r = kepler_eq(time, a, self.period, e)
+		# lim = yrs * 2 * np.pi
+		# theta = np.linspace(0, lim, sp)
+		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		x = r * np.cos(theta) - offset[0]
+		y = r * np.sin(theta) - offset[1]
+		if rt is True:
+			return (x, y)
+		else:
+			if label is True:
+				ax.plot(x, y, lw=lw, marker=marker, label=self.name)
+			else:
+				ax.plot(x, y, lw=lw, marker=marker)
 
 	# plots 3d line graph of elliptical orbit
 	# ax must be 3d
@@ -104,7 +133,7 @@ class Planet:
 		y = r * np.sin(theta)
 		fig, ax = plt.subplots()
 		ax.scatter(0, 0, s=100, c="#FFE100", marker="x", label="Star")
-		self.plot_orbit(fig, ax)
+		self.plot_orbit()
 		p = ax.scatter(x, y, c="b", s=20, label=self.name)
 		ax.set(
 			aspect="equal",
@@ -219,7 +248,7 @@ class PlanetarySystem:
 				marker=self.star.marker,
 				label=self.star.name)
 		for planet in self.planets:
-			planet.plot_orbit(fig, ax, label=True)
+			planet.plot_orbit(label=True)
 		plt.title(self.name)
 		plt.xlabel("Major axis / AU")
 		plt.ylabel("Minor axis / AU")
@@ -228,6 +257,45 @@ class PlanetarySystem:
 		plt.grid(True)
 		plt.show()
 		plt.close()
+
+	# ptols orbits with planet_c as fixed object
+	def ptol_orbits(self, ax, planet_c, yrs=1, main=False):
+		yrs *= planet_c.period
+		offset = planet_c.ptol_orbit(ax, rt=True, yrs=yrs)
+
+		if main is True:
+			for planet in self.planets:
+				if planet != planet_c:
+					planet.ptol_orbit(ax, offset=offset, yrs=yrs, lw=0.5, label=True)
+				else:
+					planet.ptol_orbit(ax, offset=offset, yrs=yrs, marker="o", label=True)
+		else:
+			for planet in self.planets:
+				if planet != planet_c:
+					planet.ptol_orbit(ax, offset=offset, yrs=yrs, lw=0.5)
+				else:
+					planet.ptol_orbit(ax, offset=offset, yrs=yrs, marker="o")
+
+		# plot star
+		if self.star is not None:
+			ax.plot(
+				-offset[0],
+				-offset[1],
+				color=self.star.color,
+				label=self.star.name)
+
+		if main is True:
+			ax.set(
+				title=f"{self.name} relative to {planet_c.name}: {yrs:.3f} years",
+				xlabel="Major axis / AU",
+				ylabel="Minor axis / AU",
+				aspect="equal",
+				facecolor="#000000"
+			)
+			ax.legend(loc="upper right")
+			plt.grid(True)
+			plt.show()
+			plt.close()
 
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
@@ -250,7 +318,7 @@ class PlanetarySystem:
 				marker=self.star.marker,
 				label=self.star.name)
 		for planet in self.planets:
-			planet.plot_orbit(fig, ax)
+			planet.plot_orbit()
 			a = planet.sm_axis
 			e = planet.eccentricity
 
@@ -303,6 +371,76 @@ class PlanetarySystem:
 			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}"
 			anim.save(
 				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}",
+				writer="ffmpeg")
+			plt.close()
+			return fname
+		plt.close()
+
+	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext=""):
+		period = planet_y.period
+		years = yrs * period
+		i = 20
+		frames = int((1000 / i) * years)
+		lim = period * years
+		time = np.linspace(0, lim, frames + 1)
+		plots = []
+		fig, ax = plt.subplots()
+		self.ptol_orbits(ax, planet_c, yrs)
+
+		for planet in self.planets:
+			a = planet.sm_axis
+			e = planet.eccentricity
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+			offset = planet_c.ptol_orbit(ax, yrs=lim, sp=frames + 1, rt=True)
+			x = r * np.cos(theta) - offset[0][0]
+			y = r * np.sin(theta) - offset[1][0]
+			p = ax.scatter(x, y, s=20, label=planet.name)
+			plots.append(p)
+			ax.set(
+				aspect="equal",
+				xlabel="x / AU",
+				ylabel="y / AU",
+				# xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				# ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				facecolor="#333333")
+			ax.legend(loc="upper right")
+
+		def update(frame):
+			ax.set(
+				title=f"{self.name}: t={time[frame] / period:.3f} {planet_y.name} years")
+			offset = planet_c.ptol_orbit(ax, yrs=lim, sp=frames + 1, rt=True)
+			for c, planet in enumerate(self.planets):
+				a = planet.sm_axis
+				e = planet.eccentricity
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
+				x = r * np.cos(theta) - offset[0][frame]
+				y = r * np.sin(theta) - offset[1][frame]
+				data = np.stack([x, y]).T
+				plots[c].set_offsets(data)
+			return tuple(plots)
+
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs:.0f} "
+
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		elif f_ext == "html":
+			with open(
+				f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.html",
+				"w"
+			) as f:
+				print(anim.to_html5_video(), file=f)
+		else:
+			fname = f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}"
+			anim.save(
+				f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}",
 				writer="ffmpeg")
 			plt.close()
 			return fname
@@ -408,7 +546,7 @@ class PlanetarySystem:
 		y_array = []
 		for planet in self.planets:
 			if line is True:
-				planet.plot_orbit(fig, ax)
+				planet.plot_orbit()
 			a = planet.sm_axis
 			e = planet.eccentricity
 
