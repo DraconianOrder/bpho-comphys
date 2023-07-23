@@ -13,6 +13,7 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.scrollview import ScrollView
 from kivy.core.window import Window
 from kivy.uix.videoplayer import VideoPlayer
+from kivy.uix.textinput import TextInput
 
 import planets
 
@@ -33,9 +34,9 @@ class CollapseBtn(Button):
 class SubmitBtn(Button):
 	def __init__(self, **kwargs):
 		super(SubmitBtn, self).__init__(**kwargs)
-		self.height = 20
+		self.height = 14
 		self.size_hint_x = 0.4
-		self.size_hint_y = 0.4
+		# self.size_hint_y = 0.7
 		self.pos_hint = {"center_x": 0.5}
 		self.text = "Submit"
 
@@ -54,21 +55,16 @@ class CheckOption(GridLayout):
 
 	def check(self, _, value, *args):
 		self.selected = value
-		# return value
-		# if value:
-		# 	print(f"checkbox {checkbox} is active")
-		# else:
-		# 	print(f"checkbox {checkbox} is inactive")
 
 	def __init__(self, name, **kwargs):
 		super(CheckOption, self).__init__(**kwargs)
 		self.nm = str(name)
 		self.cols = 2
-		self.height = 12
+		self.height = 14
+		self.add_widget(Label(text=name))
 		self.box = CheckBox()
 		self.box.bind(active=self.check)
 		self.add_widget(self.box)
-		self.add_widget(Label(text=name))
 
 
 class PresetsMenu(BoxLayout):
@@ -98,37 +94,119 @@ class PresetsMenu(BoxLayout):
 		self.submit_btn.bind(on_press=self.submit)
 		self.submit(None)
 
-		self.size_hint_min_y = len(self.children) * 22 + self.submit_btn.height
+		self.size_hint_min_y = len(self.children) * 24
+
+
+class CustomInput(GridLayout):
+	selected = ""
+
+	def check(self, _, value, *args):
+		self.selected = value
+		return self.selected
+
+	def __init__(self, name, ht, f, **kwargs):
+		super(CustomInput, self).__init__(**kwargs)
+		self.nm = str(name)
+		self.cols = 2
+		self.height = 26
+		self.minimum_height = 26
+		self.add_widget(Label(text=name))
+		self.txin = TextInput(multiline=False, hint_text=ht, input_filter=f)
+		self.txin.bind(text=self.check)
+		self.add_widget(self.txin)
+
+
+class CustomPlanet(BoxLayout):
+	pl_select = {}
+
+	def pl_check(self, *args):
+		self.planet = planets.Planet()
+		try:
+			self.planet.name = str(self.name.selected)
+		except Exception:
+			pass
+		try:
+			self.planet.sm_axis = float(self.sm_axis.selected)
+		except Exception:
+			pass
+		try:
+			self.planet.period = float(self.period.selected)
+		except Exception:
+			pass
+		try:
+			self.planet.eccentricity = float(self.eccentricity.selected)
+		except Exception:
+			pass
+		try:
+			self.planet.inclination = float(self.inclination.selected)
+		except Exception:
+			pass
+		try:
+			self.planet.true_anomaly = float(self.true_anomaly.selected)
+		except Exception:
+			pass
+		# for child in self.children[::-1]:
+		# 	try:
+		# 		self.pl_select[child.nm] = child.selected
+		# 	except Exception:
+		# 		pass
+		# return self.pl_select
+		return self.planet
+
+	def __init__(self, num, **kwargs):
+		super(CustomPlanet, self).__init__(**kwargs)
+		self.orientation = "vertical"
+		self.spacing = 10
+		self.add_widget(Label(text=f"Custom Planet {num}"))
+		self.name = CustomInput(
+			name="Name", ht="Custom planet", f=None)
+		self.sm_axis = CustomInput(
+			name="Semi-major axis", ht="In AU", f="float")
+		self.period = CustomInput(
+			name="Orbital period", ht="In Earth years", f="float")
+		self.eccentricity = CustomInput(
+			name="Eccentricity", ht="0 < e < 1", f="float")
+		self.inclination = CustomInput(
+			name="Inclination", ht="Angle in deg", f="float")
+		self.true_anomaly = CustomInput(
+			name="Initial polar angle", ht="Angle in deg", f="float")
+		attr = [
+			self.name, self.sm_axis, self.period, self.eccentricity, self.inclination
+		]
+		for i in attr:
+			self.add_widget(i)
+
+		self.height = len(self.children) * 36
+		self.size_hint_min_y = len(self.children) * 36
 
 
 class CustomMenu(BoxLayout):
-	select = {}
+	select = []
 
 	def submit(self, _, **kwargs):
+		self.select = []
 		for child in self.children[::-1]:
 			try:
-				self.select[child.nm] = child.selected
+				self.select.append(child.pl_check())
 			except Exception:
 				pass
-			finally:
-				pass
-		# print(self.select)
+		self.add_widget(CustomPlanet(num=len(self.children)), len(self.children))
+		self.size_hint_min_y = len(self.children) * 36 * 7 + self.submit_btn.height
 
 	def __init__(self, **kwargs):
-		super(PresetsMenu, self).__init__(**kwargs)
+		super(CustomMenu, self).__init__(**kwargs)
 		self.orientation = "vertical"
 		self.spacing = 10
 		self.padding = 20
 
-		for i in planets.pre:
-			self.add_widget(CheckOption(name=i.name))
+		# self.add_widget(CustomPlanet())
 
-		self.submit_btn = SubmitBtn()
+		self.submit_btn = SubmitBtn(size_hint_y=0.2)
 		self.add_widget(self.submit_btn)
 		self.submit_btn.bind(on_press=self.submit)
 		self.submit(None)
 
-		self.size_hint_min_y = len(self.children) * 22 + self.submit_btn.height
+		self.size_hint_min_y = len(self.children) * 36 * 7
 
 
 class Viewer(BoxLayout):
@@ -146,7 +224,12 @@ class Viewer(BoxLayout):
 		print(display)
 
 		# options from custom
-		custom = None
+		custom = self.parent.parent.parent.parent.accordion.a2.custom_menu.select
+		print(custom)
+		display += custom
+		print(display)
+		# breakpoint()
+
 		# additional options
 		additional = None
 

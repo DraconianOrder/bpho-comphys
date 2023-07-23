@@ -80,10 +80,14 @@
 
 	AccordionItem:
 		id: custom
+		custom_menu: c
 		title: "Custom"
 		min_space: self.accordion.height / 12
-		Label:
-			text: "Placeholder"
+		ScrollView:
+			do_scroll_x: False
+			do_scroll_y: True
+			CustomMenu:
+				id: c
 
 	AccordionItem:
 		id: additional
