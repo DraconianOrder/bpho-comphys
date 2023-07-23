@@ -28,7 +28,23 @@ def kepler_eq(time, sm_axis, period, eccentricity):
 	return theta, r
 
 
-class planet:
+def sort_p(planets):
+	def k(e):
+		return e.period
+	t = planets
+	t.sort(key=k)
+	return t
+
+
+class Star:
+	def __init__(self, name, marker, color, size):
+		self.name = name
+		self.marker = marker
+		self.color = color
+		self.size = size
+
+
+class Planet:
 	def __init__(
 		self,
 		name,  # preferably title case
@@ -185,16 +201,23 @@ class planet:
 		plt.close()
 
 
-class planetary_system:
+class PlanetarySystem:
 	def __init__(self, name, star, planets):
 		self.name = name
 		self.star = star
-		self.planets = planets
+		self.planets = sort_p([*set(planets)])
 
 	# plots line graphs of all planets in the system on one axis
 	def plot_orbits(self):
 		fig, ax = plt.subplots()
-		plt.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		if self.star is not None:
+			plt.scatter(
+				0,
+				0,
+				s=self.star.size,
+				c=self.star.color,
+				marker=self.star.marker,
+				label=self.star.name)
 		for planet in self.planets:
 			planet.plot_orbit(fig, ax, label=True)
 		plt.title(self.name)
@@ -218,7 +241,14 @@ class planetary_system:
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig, ax = plt.subplots()
-		ax.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		if self.star is not None:
+			ax.scatter(
+				0,
+				0,
+				s=self.star.size,
+				c=self.star.color,
+				marker=self.star.marker,
+				label=self.star.name)
 		for planet in self.planets:
 			planet.plot_orbit(fig, ax)
 			a = planet.sm_axis
@@ -270,9 +300,12 @@ class planetary_system:
 			) as f:
 				print(anim.to_html5_video(), file=f)
 		else:
+			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}"
 			anim.save(
 				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}",
 				writer="ffmpeg")
+			plt.close()
+			return fname
 		plt.close()
 
 	def animate_orbits_3d(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
@@ -285,7 +318,15 @@ class planetary_system:
 		plots = []
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection="3d")
-		ax.scatter(0, 0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		if self.star is not None:
+			ax.scatter(
+				0,
+				0,
+				0,
+				s=self.star.size,
+				c=self.star.color,
+				marker=self.star.marker,
+				label=self.star.name)
 		for planet in self.planets:
 			planet.plot_orbit_3d(fig, ax)
 			a = planet.sm_axis
@@ -355,7 +396,14 @@ class planetary_system:
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig, ax = plt.subplots()
-		ax.scatter(0, 0, s=100, c="#FFE100", marker="o", label=self.star)
+		if self.star is not None:
+			ax.scatter(
+				0,
+				0,
+				s=self.star.size,
+				c=self.star.color,
+				marker=self.star.marker,
+				label=self.star.name)
 		x_array = []
 		y_array = []
 		for planet in self.planets:
@@ -437,63 +485,63 @@ class planetary_system:
 # values from NASA's Horizons System
 # https://ssd.jpl.nasa.gov/horizons/app.html#/
 # at A.D. 2023-Aug-14 00:00:00.0000
-mercury = planet(
+mercury = Planet(
 	name="Mercury",
 	sm_axis=0.3870978295665558,
 	period=0.2410108701802479,
 	eccentricity=2.056354954960132E-01,
 	inclination=7.003585469292125E+00,
 	true_anomaly=1.889230396629393E+02)
-venus = planet(
+venus = Planet(
 	name="Venus",
 	sm_axis=0.72333967899011,
 	period=0.615628142197116,
 	eccentricity=6.753028854282829E-03,
 	inclination=3.394360369950776E+00,
 	true_anomaly=1.894673808209864E+02)
-earth = planet(
+earth = Planet(
 	name="Earth",
 	sm_axis=1.00073819677731,
 	period=1.001810605554546,
 	eccentricity=1.604364152762242E-02,
 	inclination=3.099622567228552E-03,
 	true_anomaly=2.186556906492948E+02)
-mars = planet(
+mars = Planet(
 	name="Mars",
 	sm_axis=1.52369722627954,
 	period=1.882146861200281,
 	eccentricity=9.334737917768475E-02,
 	inclination=1.847923133607658E+00,
 	true_anomaly=2.131590190014785E+02)
-jupiter = planet(
+jupiter = Planet(
 	name="Jupiter",
 	sm_axis=5.202378290208416,
 	period=11.86864846590255,
 	eccentricity=4.833431537183881E-02,
 	inclination=1.303626614600446E+00,
 	true_anomaly=1.886747335398515E+01)
-saturn = planet(
+saturn = Planet(
 	name="Saturn",
 	sm_axis=9.57511052966961,
 	period=29.64552878472513,
 	eccentricity=5.409745026803753E-02,
 	inclination=2.488383924364373E+00,
 	true_anomaly=2.442738264723067E+02)
-uranus = planet(
+uranus = Planet(
 	name="Uranus",
 	sm_axis=19.2960286599553,
 	period=84.8199448379608,
 	eccentricity=4.411720227915315E-02,
 	inclination=7.721283154484431E-01,
 	true_anomaly=2.441986196273190E+02)
-neptune = planet(
+neptune = Planet(
 	name="Neptune",
 	sm_axis=30.27978943893903,
 	period=166.7338026736612,
 	eccentricity=1.450793663505559E-02,
 	inclination=1.768991920111643E+00,
 	true_anomaly=3.275592247377758E+02)
-pluto = planet(
+pluto = Planet(
 	name="Pluto",
 	sm_axis=39.11030891229124,
 	period=244.7611191723939,
@@ -501,9 +549,29 @@ pluto = planet(
 	inclination=1.710818788574056E+01,
 	true_anomaly=7.675388171731849E+01)
 
+sun = Star("Sun", "o", "#FFE100", 100)
+
 planets = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune]
 inner = [mercury, venus, earth, mars]
 outer = [jupiter, saturn, uranus, neptune, pluto]
+full = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto]
 
-inner_planets = planetary_system("Inner planets", "Sun", inner)
-outer_planets = planetary_system("Outer planets", "Sun", outer)
+inner_planets = PlanetarySystem("Inner Planets", sun, inner)
+outer_planets = PlanetarySystem("Outer Planets", sun, outer)
+solar_system = PlanetarySystem("Solar System", sun, full)
+
+pre = [
+	sun,
+	solar_system,
+	inner_planets,
+	outer_planets,
+	mercury,
+	venus,
+	earth,
+	mars,
+	jupiter,
+	saturn,
+	uranus,
+	neptune,
+	pluto
+]
