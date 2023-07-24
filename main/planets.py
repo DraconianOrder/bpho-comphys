@@ -74,6 +74,21 @@ class Planet:
 		else:
 			plt.plot(x, y)
 
+	# plots 3d line graph of elliptical orbit
+	# ax must be 3d
+	def plot_orbit_3d(self, fig, ax, label=False):
+		theta = np.linspace(0, 2 * np.pi, 1000)
+		a = self.sm_axis
+		e = self.eccentricity
+		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination))
+		y = r * np.sin(theta)
+		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination))
+		if label is True:
+			plt.plot(x, y, z, label=self.name)
+		else:
+			plt.plot(x, y, z)
+
 	# plots line graph of elliptical orbit
 	def ptol_orbit(
 		self,
@@ -92,7 +107,7 @@ class Planet:
 		theta, r = kepler_eq(time, a, self.period, e)
 		# lim = yrs * 2 * np.pi
 		# theta = np.linspace(0, lim, sp)
-		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
 		x = r * np.cos(theta) - offset[0]
 		y = r * np.sin(theta) - offset[1]
 		if rt is True:
@@ -103,20 +118,32 @@ class Planet:
 			else:
 				ax.plot(x, y, lw=lw, marker=marker)
 
-	# plots 3d line graph of elliptical orbit
-	# ax must be 3d
-	def plot_orbit_3d(self, fig, ax, label=False):
-		theta = np.linspace(0, 2 * np.pi, 1000)
+	def ptol_orbit_3d(
+		self,
+		ax,
+		offset=(0, 0, 0),
+		rt=False,
+		yrs=1,
+		sp=1000,
+		label=False,
+		lw=1,
+		marker=None
+	):
 		a = self.sm_axis
 		e = self.eccentricity
-		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
-		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination))
-		y = r * np.sin(theta)
-		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination))
-		if label is True:
-			plt.plot(x, y, z, label=self.name)
+		time = np.linspace(0, yrs, sp)
+		theta, r = kepler_eq(time, a, self.period, e)
+		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination)) - offset[0]
+		y = r * np.sin(theta) - offset[1]
+		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination)) - offset[2]
+		if rt is True:
+			return (x, y, z)
 		else:
-			plt.plot(x, y, z)
+			if label is True:
+				ax.plot(x, y, z, lw=lw, marker=marker, label=self.name)
+			else:
+				ax.plot(x, y, z, lw=lw, marker=marker)
 
 	# animates scatter point according to kepler's laws
 	def animate_orbit(self, f_ext=""):
@@ -287,9 +314,49 @@ class PlanetarySystem:
 		if main is True:
 			ax.set(
 				title=f"{self.name} relative to {planet_c.name}: {yrs:.3f} years",
-				xlabel="Major axis / AU",
-				ylabel="Minor axis / AU",
+				xlabel="x / AU",
+				ylabel="y / AU",
 				aspect="equal",
+				facecolor="#000000"
+			)
+			ax.legend(loc="upper right")
+			plt.grid(True)
+			plt.show()
+			plt.close()
+
+	# ptols 3d orbits with planet_c as fixed object
+	def ptol_orbits_3d(self, ax, planet_c, yrs=1, main=False):
+		yrs *= planet_c.period
+		offset = planet_c.ptol_orbit_3d(ax, rt=True, yrs=yrs)
+
+		if main is True:
+			for planet in self.planets:
+				if planet != planet_c:
+					planet.ptol_orbit_3d(ax, offset=offset, yrs=yrs, lw=0.5, label=True)
+				else:
+					planet.ptol_orbit_3d(ax, offset=offset, yrs=yrs, marker="o", label=True)
+		else:
+			for planet in self.planets:
+				if planet != planet_c:
+					planet.ptol_orbit_3d(ax, offset=offset, yrs=yrs, lw=0.5)
+				else:
+					planet.ptol_orbit_3d(ax, offset=offset, yrs=yrs, marker="o")
+
+		# plot star
+		if self.star is not None:
+			ax.plot(
+				-offset[0],
+				-offset[1],
+				-offset[2],
+				color=self.star.color,
+				label=self.star.name)
+
+		if main is True:
+			ax.set(
+				title=f"{self.name} relative to {planet_c.name}: {yrs:.3f} years",
+				xlabel="x / AU",
+				ylabel="y / AU",
+				zlabel="z / AU",
 				facecolor="#000000"
 			)
 			ax.legend(loc="upper right")
@@ -300,7 +367,7 @@ class PlanetarySystem:
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
-	def animate_orbits(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
+	def animate_orbits(self, planet_y, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -358,34 +425,32 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs * self.planets[-1].period / period:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.html",
-				"w"
-			) as f:
+			with open(f":{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}"
-			anim.save(
-				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}",
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext=""):
+	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
-		years = yrs * period
+		# years = yrs * period
 		i = 20
-		frames = int((1000 / i) * years)
-		lim = period * years
+		frames = int((1000 / i) * yrs)
+		lim = period * yrs
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig, ax = plt.subplots()
-		self.ptol_orbits(ax, planet_c, yrs)
+		self.ptol_orbits(ax, planet_c, lim / planet_c.period)
 
 		for planet in self.planets:
 			a = planet.sm_axis
@@ -428,25 +493,23 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}"
-			anim.save(
-				f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}",
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def animate_orbits_3d(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
+	def animate_orbits_3d(self, planet_y, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -510,25 +573,96 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs * self.planets[-1].period / period:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.{f_ext}"
-			anim.save(
-				fname,
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def spirograph(self, planet_y, yrs=10, f_ext="", line=False):
+	def ptolemate_3d(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
+		period = planet_y.period
+		# years = yrs * period
+		i = 20
+		frames = int((1000 / i) * yrs)
+		lim = period * yrs
+		time = np.linspace(0, lim, frames + 1)
+		plots = []
+		fig = plt.figure()
+		ax = fig.add_subplot(111, projection="3d")
+		self.ptol_orbits_3d(ax, planet_c, lim / planet_c.period)
+
+		for planet in self.planets:
+			a = planet.sm_axis
+			e = planet.eccentricity
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+			offset = planet_c.ptol_orbit_3d(ax, yrs=lim, sp=frames + 1, rt=True)
+			x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination)) - offset[0][0]
+			y = r * np.sin(theta) - offset[1][0]
+			z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination)) - offset[2][0]
+			p = ax.scatter(x, y, z, label=planet.name)
+			plots.append(p)
+			ax.set(
+				xlabel="x / AU",
+				ylabel="y / AU",
+				zlabel="z / AU",
+				# xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				# ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				# zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				facecolor="#333333")
+			ax.legend(loc="upper right")
+
+		def update(frame):
+			ax.set(
+				title=f"{self.name}: t={time[frame] / period:.3f} {planet_y.name} years")
+			offset = planet_c.ptol_orbit_3d(ax, yrs=lim, sp=frames + 1, rt=True)
+			for c, planet in enumerate(self.planets):
+				a = planet.sm_axis
+				e = planet.eccentricity
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
+				x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination)) - offset[0][frame]
+				y = r * np.sin(theta) - offset[1][frame]
+				z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination)) - offset[2][frame]
+				data = np.stack([x, y]).T
+				plots[c].set_offsets(data)
+				plots[c].set_3d_properties(z, "z")
+			return tuple(plots)
+
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs:.0f} "
+
+		if fname == "":
+			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} with {w}{n} Years 3D"
+
+		if f_ext == "":
+			plt.grid(True)
+			plt.show()
+		elif f_ext == "html":
+			with open(f"{fname}.html", "w") as f:
+				print(anim.to_html5_video(), file=f)
+		else:
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
+			plt.close()
+			return fn
+		plt.close()
+
+	def spirograph(self, planet_y, yrs=10, f_ext="", line=False, fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -607,21 +741,19 @@ class PlanetarySystem:
 		if line is True:
 			v = " and line"
 
+		if fname == "":
+			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}"
+
 		if f_ext == "":
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.{f_ext}"
-			anim.save(
-				fname,
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
 

@@ -9,6 +9,7 @@ from kivy.uix.videoplayer import VideoPlayer
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.accordion import Accordion
+from random import choice
 
 import planets
 
@@ -220,8 +221,12 @@ class AddMenu(BoxLayout):
 		self.spacing = 10
 		self.padding = 20
 
-		self.years = CustomInput("Years", "Number of orbits")
+		self.years = CustomInput("Years", "Number of orbits", "float")
 		self.add_widget(self.years)
+		self.planet_y = CustomInput("Year planet", "1 orbit = 1 second")
+		self.add_widget(self.planet_y)
+		self.planet_c = CustomInput("Static planet", "Dedicated to Ptolemy ;)")
+		self.add_widget(self.planet_c)
 		self.facecolor = CustomInput("Background colour", "e.g. #FFF8E7")
 		self.add_widget(self.facecolor)
 		self.linewidth = CustomInput("Line width", "0 < lw <= 1", "float")
@@ -232,6 +237,8 @@ class AddMenu(BoxLayout):
 		self.add_widget(self.no_legend)
 		self.legend_loc = CustomInput("Legend location", "e.g. 'upper right'")
 		self.add_widget(self.legend_loc)
+		self.three_d = CheckOption("3D? (#6, #7 only)")
+		self.add_widget(self.three_d)
 
 		self.submit_btn = SubmitBtn()
 		self.add_widget(self.submit_btn)
@@ -245,6 +252,12 @@ class Viewer(BoxLayout):
 	options = []
 
 	def generate(self, _, **kwargs):
+		# selected task from sidebar
+		# either a string e.g. "1" or None
+		task = self.parent.parent.parent.parent.accordion.parent.sidebar.selected
+		if task is None:
+			return
+
 		# options from presets
 		presets = self.parent.parent.parent.parent.accordion.a1.presets_menu.select
 
@@ -263,9 +276,20 @@ class Viewer(BoxLayout):
 		# breakpoint()
 
 		# additional options
-		additional = None
+		a = self.parent.parent.parent.parent.accordion.a3.add_menu.select
+		addt = {
+			"yrs": float(a["Years"]) if a["Years"] != "" else 1,
+			"planet_y": str(a["Year planet"]),
+			"planet_c": str(a["Static planet"]),
+			"facecolor": str(a["Background colour"]),
+			"lw": float(a["Line width"]) if a["Line width"] != "" else 1,
+			"label": not(bool(a["Hide axes labels"])),
+			"legend": not(bool(a["Hide legend"])),
+			"legend_loc": str(a["Legend location"]),
+			"3d": bool(a["3D? (#6, #7 only)"])
+		}
 
-		self.options = [presets, custom, additional]
+		self.options = [presets, custom, a]
 		print(self.options)
 
 		t = []
@@ -285,8 +309,39 @@ class Viewer(BoxLayout):
 			temp = planets.PlanetarySystem("Custom", d[0], d[1:])
 		else:
 			temp = planets.PlanetarySystem("Custom", None, d)
-		y = temp.planets[-1]
-		f = temp.spirograph(y, 1, f_ext="mp4")
+
+		planet_y = next(
+			(x for x in d if x.name == addt["planet_y"]),
+			temp.planets[-1]
+		)
+		planet_c = next(
+			(x for x in d if x.name == addt["planet_c"]),
+			choice(temp.planets)
+		)
+		yrs = addt["yrs"]  # take from additional
+
+		fn = "temp"
+
+		if task == "1":
+			pass  # need task1.py as a function in planets.PlanetarySystem
+		elif task == "2":
+			pass  # need planets.PlanetarySystem.plot_orbits() to save file
+		elif task == "3":
+			f = temp.animate_orbits(planet_y, yrs, f_ext="mp4", fname=fn)
+		elif task == "4":
+			f = temp.animate_orbits_3d(planet_y, yrs, f_ext="mp4", fname=fn)
+		elif task == "5":
+			pass  # need task 5 function in planets.py! plotting pref in PlanetarySystem
+		elif task == "6":
+			# add option for 2d/3d?
+			f = temp.spirograph(planet_y, yrs, f_ext="mp4", fname=fn)
+		elif task == "7":
+			# option for 2d/3d
+			if addt["3d"] is True:
+				f = temp.ptolemate_3d(planet_y, planet_c, yrs, f_ext="mp4", fname=fn)
+			else:
+				f = temp.ptolemate(planet_y, planet_c, yrs, f_ext="mp4", fname=fn)
+
 		self.remove_widget(self.video)
 		self.video = VideoPlayer(source=f, state="play", options={"eos": "loop"})
 		self.add_widget(self.video)
@@ -316,6 +371,14 @@ class Main(Accordion):
 
 
 class Sidebar(BoxLayout):
+	selected = None
+
+	def check(self, _, value, *args):
+		temp = next(
+			(x for x in ToggleButton.get_widgets("tasks") if x.state == "down"),
+			None)
+		self.selected = temp.text if temp else None
+
 	def __init__(self, **kwargs):
 		self.orientation = "vertical"
 		self.size_hint = (0.25, 1)
@@ -330,6 +393,7 @@ class Sidebar(BoxLayout):
 		a = [self.t1, self.t2, self.t3, self.t4, self.t5, self.t6, self.t7]
 		for i in a:
 			self.add_widget(i)
+			i.bind(state=self.check)
 
 
 class Frame(BoxLayout):
