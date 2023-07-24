@@ -107,7 +107,7 @@ class Planet:
 		theta, r = kepler_eq(time, a, self.period, e)
 		# lim = yrs * 2 * np.pi
 		# theta = np.linspace(0, lim, sp)
-		r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
+		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
 		x = r * np.cos(theta) - offset[0]
 		y = r * np.sin(theta) - offset[1]
 		if rt is True:
@@ -134,7 +134,7 @@ class Planet:
 		time = np.linspace(0, yrs, sp)
 		theta, r = kepler_eq(time, a, self.period, e)
 		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
-		x = r * np.cos(theta) * np.cos(nr.deg2rad(self.inclination)) - offset[0]
+		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination)) - offset[0]
 		y = r * np.sin(theta) - offset[1]
 		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination)) - offset[2]
 		if rt is True:
@@ -367,7 +367,7 @@ class PlanetarySystem:
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
-	def animate_orbits(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
+	def animate_orbits(self, planet_y, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -425,34 +425,32 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs * self.planets[-1].period / period:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.html",
-				"w"
-			) as f:
+			with open(f":{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}"
-			anim.save(
-				f"../images/Task 3/{self.name} Orbits with {w}{n} Years.{f_ext}",
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext=""):
+	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
-		years = yrs * period
+		# years = yrs * period
 		i = 20
-		frames = int((1000 / i) * years)
-		lim = period * years
+		frames = int((1000 / i) * yrs)
+		lim = period * yrs
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig, ax = plt.subplots()
-		self.ptol_orbits(ax, planet_c, yrs)
+		self.ptol_orbits(ax, planet_c, lim / planet_c.period)
 
 		for planet in self.planets:
 			a = planet.sm_axis
@@ -495,25 +493,23 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}"
-			anim.save(
-				f"./images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years.{f_ext}",
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def animate_orbits_3d(self, planet_y, yrs=1, f_ext=""):  # 1 year = 1 second
+	def animate_orbits_3d(self, planet_y, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -577,35 +573,33 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs * self.planets[-1].period / period:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 4/{self.name} Orbits 3D with {w}{n} Years.{f_ext}"
-			anim.save(
-				fname,
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def ptolemate_3d(self, planet_y, planet_c, yrs=1, f_ext=""):
+	def ptolemate_3d(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
 		period = planet_y.period
-		years = yrs * period
+		# years = yrs * period
 		i = 20
-		frames = int((1000 / i) * years)
-		lim = period * years
+		frames = int((1000 / i) * yrs)
+		lim = period * yrs
 		time = np.linspace(0, lim, frames + 1)
 		plots = []
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection="3d")
-		self.ptol_orbits_3d(ax, planet_c, yrs)
+		self.ptol_orbits_3d(ax, planet_c, lim / planet_c.period)
 
 		for planet in self.planets:
 			a = planet.sm_axis
@@ -652,25 +646,23 @@ class PlanetarySystem:
 		if yrs != 1:
 			w = f"{yrs:.0f} "
 
+		if fname == "":
+			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} with {w}{n} Years 3D"
+
 		if f_ext == "":
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 7/{self.name} relative to {planet_c.name} with {w}{n} Years 3D.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} with {w}{n} Years 3D.{f_ext}"
-			anim.save(
-				fname,
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
-	def spirograph(self, planet_y, yrs=10, f_ext="", line=False):
+	def spirograph(self, planet_y, yrs=10, f_ext="", line=False, fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -749,21 +741,19 @@ class PlanetarySystem:
 		if line is True:
 			v = " and line"
 
+		if fname == "":
+			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}"
+
 		if f_ext == "":
 			plt.show()
 		elif f_ext == "html":
-			with open(
-				f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.html",
-				"w"
-			) as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
-			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}.{f_ext}"
-			anim.save(
-				fname,
-				writer="ffmpeg")
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
 			plt.close()
-			return fname
+			return fn
 		plt.close()
 
 
