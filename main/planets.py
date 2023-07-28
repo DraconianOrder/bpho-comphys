@@ -28,6 +28,33 @@ def kepler_eq(time, sm_axis, period, eccentricity):
 	return theta, r
 
 
+# task 5: uses kepler ii but using integrals instead of iteration
+def kepler2(yrs, sm_axis, period, eccentricity, d, ta=0):
+	time = np.linspace(0, yrs, d)
+	a = sm_axis
+	e = eccentricity
+	n = np.floor(time[-1] / period)
+	theta = np.linspace(ta, 2 * np.pi * n + ta, d)
+	f = (1 - e * np.cos(theta)) ** -2
+	c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+	t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+	i = np.interp(t, theta, time)
+	r = a * (1 - e ** 2) / (1 + e * np.cos(i))
+	return i, theta, r
+
+
+def task5(yrs, period, eccentricity, d=1000, ta=0):
+	fig, ax = plt.subplots()
+	e = eccentricity
+	time = np.linspace(0, yrs, d)
+	n = np.ceil(time[-1] / period)
+	theta = np.linspace(ta, 2 * np.pi * n + ta, d)
+	f = (1 - e * np.cos(theta)) ** -2
+	c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+	t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+	return np.interp(t, theta, time)
+
+
 def sort_p(planets):
 	def k(e):
 		return e.period
@@ -198,7 +225,6 @@ class Planet:
 				writer="ffmpeg")
 		plt.close()
 
-	# animates 3d orbit
 	def animate_3d(self, f_ext=""):
 		years = 5
 		i = 20
@@ -263,11 +289,127 @@ class PlanetarySystem:
 		self.star = star
 		self.planets = sort_p([*set(planets)])
 
+	# plot log graph of semi-major axis vs orbital period
+	def task1(self, f_ext="", fname=""):
+		x = np.array([planet.sm_axis for planet in self.planets])
+		y = np.array([planet.period for planet in self.planets])
+
+		# plot scatter graph to show a^(3/2) ∝ T
+		# where a is the semi-major axis and T is the orbital period
+		x2 = np.array([planet.sm_axis ** (3 / 2) for planet in self.planets])
+		y2 = np.array([planet.period for planet in self.planets])
+		k_array = np.array([x2[i] / y2[i] for i in range(len(x2))])
+		k = sum(k_array) / len(k_array)  # average k
+
+		fig, ax = plt.subplots(figsize=(7, 7))
+
+		def update(frame):
+			plt.cla()
+			if frame % 2 == 0:
+				ax.set(
+					title="""Kepler's Third Law (log-log)
+T = ax^k → log(T) = k·log(x) + log(a) → k = Δlog(T)/Δlog(x)
+k ≈ 1.5""",
+					xlabel="Orbit semi-major axis (AU)",
+					ylabel="Orbital period (Julian years)",
+					xlim=[x[0] * 0.9, x[-1] * 1.1],
+					ylim=[y[0] * 0.9, y[-1] * 1.1],
+					aspect="equal")
+				ax.loglog(x, y, marker="*", mec="b", mfc="b", c="k")
+				for c, planet in enumerate(self.planets):
+					ax.annotate(planet.name, (x[c], y[c]), color="g")
+				plt.grid(True, which="both")
+			else:
+				ax.set(
+					title=f"Kepler's Third Law (AU^(3/2) vs yr)\nk = a^(3/2) / T\n≈ {k}",
+					xlabel="a^(3/2) (AU^(3/2))",
+					ylabel="T (yr)",
+					xlim=[x2[0] - (x2[-1] - x2[0]) * 0.1, x2[-1] * 1.1],
+					ylim=[y2[0] - (y2[-1] - y2[0]) * 0.1, y2[-1] * 1.1],
+					aspect="equal")
+				ax.scatter(x2, y2, marker="*", c="b")
+				a, b = np.polyfit(x2, y2, 1)  # line of best fit
+				ax.plot(x2, a * x2 + b, c="k")
+				for c, planet in enumerate(self.planets):
+					ax.annotate(planet.name, (x2[c], y2[c]), color="g")
+				plt.grid(True)
+
+			return ax
+
+		anim = FuncAnimation(fig=fig, func=update, frames=2, interval=2000)
+		if fname == "":
+			fname = f"../images/Task 1/{self.name}"
+
+		if f_ext == "":
+			plt.show()
+		elif f_ext == "html":
+			with open(f"{fname}.html", "w") as f:
+				print(anim.to_html5_video(), file=f)
+		else:
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
+			plt.close()
+			return fn
+		plt.close()
+
+	def task5(self, yrs, d=1000, f_ext="", fname=""):
+		fig, ax = plt.subplots()
+		ax.set(
+			title=self.name,
+			xlabel="Time / Julian years",
+			ylabel="Polar angle / radians",
+		)
+		plots = []
+		for planet in self.planets:
+			e = planet.eccentricity
+			period = planet.period
+			time = np.linspace(0, yrs, d)
+			n = np.ceil(time[-1] / period)
+			theta = np.linspace(0, 2 * np.pi * n, d)
+			f = (1 - e * np.cos(theta)) ** -2
+			c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+			t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+
+			plots.append(ax.plot(np.interp(t, theta, time), label=planet.name))
+
+		def update(frame):
+			plots = []
+			for planet in self.planets:
+				e = planet.eccentricity
+				period = planet.period
+				time = np.linspace(0, yrs, d)
+				n = np.ceil(time[-1] / period)
+				theta = np.linspace(0, 2 * np.pi * n, d)
+				f = (1 - e * np.cos(theta)) ** -2
+				c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+				t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+				plots.append(ax.plot(np.interp(t, theta, time), label=planet.name))
+			plt.grid(True)
+			plt.legend(loc="upper right")
+			return plots
+
+		anim = FuncAnimation(fig=fig, func=update, frames=2, interval=1000)
+
+		if fname == "":
+			fname = f"../images/Task 5/{self.name}"
+
+		if f_ext == "":
+			plt.show()
+		elif f_ext == "html":
+			with open(f"{fname}.html", "w") as f:
+				print(anim.to_html5_video(), file=f)
+		else:
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
+			plt.close()
+			return fn
+		plt.close()
+
 	# plots line graphs of all planets in the system on one axis
-	def plot_orbits(self):
+	def plot_orbits(self, f_ext="", fname=""):
 		fig, ax = plt.subplots()
 		if self.star is not None:
-			plt.scatter(
+			ax.scatter(
 				0,
 				0,
 				s=self.star.size,
@@ -276,13 +418,28 @@ class PlanetarySystem:
 				label=self.star.name)
 		for planet in self.planets:
 			planet.plot_orbit(label=True)
-		plt.title(self.name)
-		plt.xlabel("Major axis / AU")
-		plt.ylabel("Minor axis / AU")
+		ax.set(
+			title=self.name,
+			xlabel="Major axis / AU",
+			ylabel="Minor axis / AU",
+			aspect="equal")
 		plt.legend(loc="upper right")
-		plt.axis("square")
 		plt.grid(True)
-		plt.show()
+
+		def update(frame):
+			return ax
+
+		if fname == "":
+			fname = f"../images/Task 2/{self.name}"
+
+		if f_ext == "":
+			plt.show()
+		else:
+			anim = FuncAnimation(fig=fig, func=update, frames=2, interval=1000)
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
+			plt.close()
+			return fn
 		plt.close()
 
 	# ptols orbits with planet_c as fixed object
@@ -432,7 +589,7 @@ class PlanetarySystem:
 			plt.grid(True)
 			plt.show()
 		elif f_ext == "html":
-			with open(f":{fname}.html", "w") as f:
+			with open(f"{fname}.html", "w") as f:
 				print(anim.to_html5_video(), file=f)
 		else:
 			fn = f"{fname}.{f_ext}"
