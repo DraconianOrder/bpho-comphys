@@ -13,85 +13,96 @@ from random import choice
 
 import planets
 
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.properties import ObjectProperty
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.accordion import Accordion
+from random import choice
+
 
 class CollapseBtn(Button):
-	def toggle_sidebar(self):
-		if self.parent.sidebar.size_hint_x == 0.25:
-			self.parent.sidebar.size_hint_x = None
-			self.parent.sidebar.width = "0dp"
-			self.parent.sidebar.opacity = 0
-			self.text = ">"
-		else:
-			self.parent.sidebar.size_hint_x = 0.25
-			self.parent.sidebar.opacity = 1
-			self.text = "<"
+    def toggle_sidebar(self):
+        if self.parent.sidebar.size_hint_x == 0.25:
+            self.parent.sidebar.size_hint_x = None
+            self.parent.sidebar.width = "0dp"
+            self.parent.sidebar.opacity = 0
+            self.text = ">"
+        else:
+            self.parent.sidebar.size_hint_x = 0.25
+            self.parent.sidebar.opacity = 1
+            self.text = "<"
 
 
 class SubmitBtn(Button):
-	def __init__(self, **kwargs):
-		super(SubmitBtn, self).__init__(**kwargs)
-		self.height = 14
-		self.size_hint_x = 0.4
-		# self.size_hint_y = 0.7
-		self.pos_hint = {"center_x": 0.5}
-		self.text = "Submit"
+    def __init__(self, **kwargs):
+        super(SubmitBtn, self).__init__(**kwargs)
+        self.height = 30
+        self.size_hint_x = 0.6
+        self.pos_hint = {"center_x": 0.5}
+        self.text = "Submit"
+        self.background_color = (0.2, 0.7, 0.3, 1)  # Green background
+        self.color = (1, 1, 1, 1)  # Text color (white)
+        self.font_size = 16  # Font size
 
 
 class GenerateBtn(Button):
-	def __init__(self, **kwargs):
-		super(GenerateBtn, self).__init__(**kwargs)
-		self.height = 20
-		# self.size_hint_x = 0.2
-		self.size_hint_y = 0.1
-		self.text = "Generate graphic"
+    def __init__(self, **kwargs):
+        super(GenerateBtn, self).__init__(**kwargs)
+        self.height = 40
+        self.size_hint_y = None
+        self.text = "Generate Graphic"
+        self.background_color = (0.3, 0.5, 0.8, 1)  # Blue background
+        self.color = (1, 1, 1, 1)  # Text color (white)
+        self.font_size = 20  # Font size
 
 
-class CheckOption(GridLayout):
-	selected = False
+class CheckOption(BoxLayout):
+    selected = False
 
-	def check(self, _, value, *args):
-		self.selected = value
+    def check(self, _, value, *args):
+        self.selected = value
 
-	def __init__(self, name, **kwargs):
-		super(CheckOption, self).__init__(**kwargs)
-		self.nm = str(name)
-		self.cols = 2
-		self.height = 14
-		self.add_widget(Label(text=name))
-		self.box = CheckBox()
-		self.box.bind(active=self.check)
-		self.add_widget(self.box)
+    def __init__(self, name, **kwargs):
+        super(CheckOption, self).__init__(**kwargs)
+        self.nm = str(name)
+        self.orientation = "horizontal"
+        self.height = 30
+        self.add_widget(Label(text=name, size_hint_x=0.8))
+        self.box = CheckBox()
+        self.box.bind(active=self.check)
+        self.add_widget(self.box)
 
 
 class PresetsMenu(BoxLayout):
-	select = {}
+    select = {}
 
-	def submit(self, _, **kwargs):
-		for child in self.children[::-1]:
-			try:
-				self.select[child.nm] = child.selected
-			except Exception:
-				pass
-			finally:
-				pass
-		# print(self.select)
+    def submit(self, _, **kwargs):
+        for child in self.children[::-1]:
+            try:
+                self.select[child.nm] = child.selected
+            except Exception:
+                pass
 
-	def __init__(self, **kwargs):
-		super(PresetsMenu, self).__init__(**kwargs)
-		self.orientation = "vertical"
-		self.spacing = 10
-		self.padding = 20
+    def __init__(self, **kwargs):
+        super(PresetsMenu, self).__init__(**kwargs)
+        self.orientation = "vertical"
+        self.spacing = 5
+        self.padding = 10
 
-		for i in planets.pre:
-			self.add_widget(CheckOption(name=i.name))
+        for i in planets.pre:
+            self.add_widget(CheckOption(name=i.name))
 
-		self.submit_btn = SubmitBtn()
-		self.add_widget(self.submit_btn)
-		self.submit_btn.bind(on_press=self.submit)
-		self.submit(None)
-
-		self.size_hint_min_y = len(self.children) * 40
-
+        self.submit_btn = SubmitBtn()
+        self.add_widget(self.submit_btn)
+        self.submit_btn.bind(on_press=self.submit)
+        self.submit(None)
+	self.size_hint_min_y = len(self.children) * 40
 
 class CustomInput(GridLayout):
 	selected = ""
