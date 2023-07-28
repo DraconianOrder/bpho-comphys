@@ -141,12 +141,6 @@ class CustomPlanet(BoxLayout):
 			self.planet.true_anomaly = float(self.true_anomaly.selected)
 		except Exception:
 			pass
-		# for child in self.children[::-1]:
-		# 	try:
-		# 		self.pl_select[child.nm] = child.selected
-		# 	except Exception:
-		# 		pass
-		# return self.pl_select
 		return self.planet
 
 	def __init__(self, num, **kwargs):
@@ -273,7 +267,6 @@ class Viewer(BoxLayout):
 		print(custom)
 		display += custom
 		print(display)
-		# breakpoint()
 
 		# additional options
 		a = self.parent.parent.parent.parent.accordion.a3.add_menu.select
@@ -303,7 +296,6 @@ class Viewer(BoxLayout):
 			display.remove(i)
 
 		d = display + t
-		# print(display)
 		print(d)
 		if presets["Sun"] is True:
 			temp = planets.PlanetarySystem("Custom", d[0], d[1:])
@@ -319,30 +311,30 @@ class Viewer(BoxLayout):
 			choice(temp.planets)
 		)
 		yrs = addt["yrs"]  # take from additional
-
+		fc = addt["facecolor"] if addt["facecolor"] != "" else "#000000"
 		fn = "temp"
 
 		if task == "1":
-			f = temp.task1("mp4", fn)
-			# pass  # need task1.py as a function in planets.PlanetarySystem
+			f = temp.task1(fc, "mp4", fn)
 		elif task == "2":
-			f = temp.plot_orbits(f_ext="mp4", fname=fn)
-			pass  # need planets.PlanetarySystem.plot_orbits() to save file
+			f = temp.plot_orbits(fc, f_ext="mp4", fname=fn)
 		elif task == "3":
-			f = temp.animate_orbits(planet_y, yrs, f_ext="mp4", fname=fn)
+			f = temp.animate_orbits(planet_y, yrs, fc, f_ext="mp4", fname=fn)
 		elif task == "4":
-			f = temp.animate_orbits_3d(planet_y, yrs, f_ext="mp4", fname=fn)
+			f = temp.animate_orbits_3d(planet_y, yrs, fc, f_ext="mp4", fname=fn)
 		elif task == "5":
-			pass  # need task 5 function in planets.py! plotting pref in PlanetarySystem
+			if yrs <= 4:
+				yrs = 5
+			f = temp.task5(planet_y, yrs, fc, "mp4", fn)
 		elif task == "6":
 			# add option for 2d/3d?
-			f = temp.spirograph(planet_y, yrs, f_ext="mp4", fname=fn)
+			f = temp.spirograph(planet_y, yrs, fc, f_ext="mp4", fname=fn)
 		elif task == "7":
 			# option for 2d/3d
 			if addt["3d"] is True:
-				f = temp.ptolemate_3d(planet_y, planet_c, yrs, f_ext="mp4", fname=fn)
+				f = temp.ptolemate_3d(planet_y, planet_c, yrs, fc, f_ext="mp4", fname=fn)
 			else:
-				f = temp.ptolemate(planet_y, planet_c, yrs, f_ext="mp4", fname=fn)
+				f = temp.ptolemate(planet_y, planet_c, yrs, fc, f_ext="mp4", fname=fn)
 
 		self.remove_widget(self.video)
 		self.video = VideoPlayer(source=f, state="play", options={"eos": "loop"})

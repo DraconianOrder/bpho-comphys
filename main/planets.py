@@ -44,7 +44,6 @@ def kepler2(yrs, sm_axis, period, eccentricity, d, ta=0):
 
 
 def task5(yrs, period, eccentricity, d=1000, ta=0):
-	fig, ax = plt.subplots()
 	e = eccentricity
 	time = np.linspace(0, yrs, d)
 	n = np.ceil(time[-1] / period)
@@ -290,7 +289,7 @@ class PlanetarySystem:
 		self.planets = sort_p([*set(planets)])
 
 	# plot log graph of semi-major axis vs orbital period
-	def task1(self, f_ext="", fname=""):
+	def task1(self, fc="#333333", f_ext="", fname=""):
 		x = np.array([planet.sm_axis for planet in self.planets])
 		y = np.array([planet.period for planet in self.planets])
 
@@ -314,7 +313,8 @@ k ≈ 1.5""",
 					ylabel="Orbital period (Julian years)",
 					xlim=[x[0] * 0.9, x[-1] * 1.1],
 					ylim=[y[0] * 0.9, y[-1] * 1.1],
-					aspect="equal")
+					aspect="equal",
+					facecolor=fc)
 				ax.loglog(x, y, marker="*", mec="b", mfc="b", c="k")
 				for c, planet in enumerate(self.planets):
 					ax.annotate(planet.name, (x[c], y[c]), color="g")
@@ -326,7 +326,8 @@ k ≈ 1.5""",
 					ylabel="T (yr)",
 					xlim=[x2[0] - (x2[-1] - x2[0]) * 0.1, x2[-1] * 1.1],
 					ylim=[y2[0] - (y2[-1] - y2[0]) * 0.1, y2[-1] * 1.1],
-					aspect="equal")
+					aspect="equal",
+					facecolor=fc)
 				ax.scatter(x2, y2, marker="*", c="b")
 				a, b = np.polyfit(x2, y2, 1)  # line of best fit
 				ax.plot(x2, a * x2 + b, c="k")
@@ -352,39 +353,43 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def task5(self, yrs, d=1000, f_ext="", fname=""):
+	def task5(self, planet_y, yrs, fc="#333333", f_ext="", fname=""):
+		years = planet_y.period * yrs
+		d = int(np.ceil(years))
 		fig, ax = plt.subplots()
 		ax.set(
 			title=self.name,
 			xlabel="Time / Julian years",
 			ylabel="Polar angle / radians",
+			facecolor=fc
 		)
 		plots = []
 		for planet in self.planets:
 			e = planet.eccentricity
 			period = planet.period
-			time = np.linspace(0, yrs, d)
+			time = np.linspace(0, years, d)
 			n = np.ceil(time[-1] / period)
 			theta = np.linspace(0, 2 * np.pi * n, d)
 			f = (1 - e * np.cos(theta)) ** -2
 			c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
 			t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
-
-			plots.append(ax.plot(np.interp(t, theta, time), label=planet.name))
+			p = np.interp(t, theta, time)
+			print(p)
+			plt.grid(True)
+			plots.append(ax.plot(p))
 
 		def update(frame):
 			plots = []
 			for planet in self.planets:
 				e = planet.eccentricity
 				period = planet.period
-				time = np.linspace(0, yrs, d)
+				time = np.linspace(0, years, d)
 				n = np.ceil(time[-1] / period)
 				theta = np.linspace(0, 2 * np.pi * n, d)
 				f = (1 - e * np.cos(theta)) ** -2
 				c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
 				t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
 				plots.append(ax.plot(np.interp(t, theta, time), label=planet.name))
-			plt.grid(True)
 			plt.legend(loc="upper right")
 			return plots
 
@@ -406,7 +411,7 @@ k ≈ 1.5""",
 		plt.close()
 
 	# plots line graphs of all planets in the system on one axis
-	def plot_orbits(self, f_ext="", fname=""):
+	def plot_orbits(self, fc="#333333", f_ext="", fname=""):
 		fig, ax = plt.subplots()
 		if self.star is not None:
 			ax.scatter(
@@ -422,7 +427,8 @@ k ≈ 1.5""",
 			title=self.name,
 			xlabel="Major axis / AU",
 			ylabel="Minor axis / AU",
-			aspect="equal")
+			aspect="equal",
+			facecolor=fc)
 		plt.legend(loc="upper right")
 		plt.grid(True)
 
@@ -443,7 +449,7 @@ k ≈ 1.5""",
 		plt.close()
 
 	# ptols orbits with planet_c as fixed object
-	def ptol_orbits(self, ax, planet_c, yrs=1, main=False):
+	def ptol_orbits(self, ax, planet_c, yrs=1, main=False, fc="#000000"):
 		yrs *= planet_c.period
 		offset = planet_c.ptol_orbit(ax, rt=True, yrs=yrs)
 
@@ -474,7 +480,7 @@ k ≈ 1.5""",
 				xlabel="x / AU",
 				ylabel="y / AU",
 				aspect="equal",
-				facecolor="#000000"
+				facecolor=fc
 			)
 			ax.legend(loc="upper right")
 			plt.grid(True)
@@ -482,7 +488,7 @@ k ≈ 1.5""",
 			plt.close()
 
 	# ptols 3d orbits with planet_c as fixed object
-	def ptol_orbits_3d(self, ax, planet_c, yrs=1, main=False):
+	def ptol_orbits_3d(self, ax, planet_c, yrs=1, main=False, fc="#000000"):
 		yrs *= planet_c.period
 		offset = planet_c.ptol_orbit_3d(ax, rt=True, yrs=yrs)
 
@@ -514,7 +520,7 @@ k ≈ 1.5""",
 				xlabel="x / AU",
 				ylabel="y / AU",
 				zlabel="z / AU",
-				facecolor="#000000"
+				facecolor=fc
 			)
 			ax.legend(loc="upper right")
 			plt.grid(True)
@@ -524,7 +530,7 @@ k ≈ 1.5""",
 	# animates all orbits of planets in system
 	# takes argument of which planet the years should be counted in
 	# expects a planet object
-	def animate_orbits(self, planet_y, yrs=1, f_ext="", fname=""):
+	def animate_orbits(self, planet_y, yrs=1, fc="#333333", f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -558,7 +564,7 @@ k ≈ 1.5""",
 				ylabel="y / AU",
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#333333")
+				facecolor=fc)
 			ax.legend(loc="upper right")
 
 		def update(frame):
@@ -598,7 +604,7 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def ptolemate(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
+	def ptolemate(self, planet_y, planet_c, yrs=1, fc="#333333", f_ext="", fname=""):
 		period = planet_y.period
 		# years = yrs * period
 		i = 20
@@ -623,9 +629,7 @@ k ≈ 1.5""",
 				aspect="equal",
 				xlabel="x / AU",
 				ylabel="y / AU",
-				# xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				# ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#333333")
+				facecolor=fc)
 			ax.legend(loc="upper right")
 
 		def update(frame):
@@ -666,7 +670,7 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def animate_orbits_3d(self, planet_y, yrs=1, f_ext="", fname=""):
+	def animate_orbits_3d(self, planet_y, yrs=1, fc="#333333", f_ext="", fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -704,7 +708,7 @@ k ≈ 1.5""",
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#333333")
+				facecolor=fc)
 			ax.legend(loc="upper right")
 
 		def update(frame):
@@ -746,7 +750,7 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def ptolemate_3d(self, planet_y, planet_c, yrs=1, f_ext="", fname=""):
+	def ptolemate_3d(self, planet_y, planet_c, yrs=1, fc="#333333", f_ext="", fname=""):
 		period = planet_y.period
 		# years = yrs * period
 		i = 20
@@ -773,10 +777,7 @@ k ≈ 1.5""",
 				xlabel="x / AU",
 				ylabel="y / AU",
 				zlabel="z / AU",
-				# xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				# ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				# zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#333333")
+				facecolor=fc)
 			ax.legend(loc="upper right")
 
 		def update(frame):
@@ -819,7 +820,7 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def spirograph(self, planet_y, yrs=10, f_ext="", line=False, fname=""):
+	def spirograph(self, planet_y, yrs=10, fc="#000000", f_ext="", line=False, fname=""):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -858,7 +859,7 @@ k ≈ 1.5""",
 				ylabel="y / AU",
 				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
 				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
-				facecolor="#000000")
+				facecolor=fc)
 			ax.legend(loc="upper right")
 
 		def update(frame):
