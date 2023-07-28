@@ -363,37 +363,37 @@ k ≈ 1.5""",
 			ylabel="Polar angle / radians",
 			facecolor=fc
 		)
-		plots = []
-		for planet in self.planets:
-			e = planet.eccentricity
-			period = planet.period
-			time = np.linspace(0, years, d)
-			n = np.ceil(time[-1] / period)
-			theta = np.linspace(0, 2 * np.pi * n, d)
-			f = (1 - e * np.cos(theta)) ** -2
-			c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
-			t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
-			p = np.interp(t, theta, time)
-			print(p)
-			plt.grid(True)
-			plots.append(ax.plot(p))
+		# plots = []
+		# for planet in self.planets:
+		# 	for e in [0, planet.eccentricity]:
+		# 		period = planet.period
+		# 		time = np.linspace(0, years, d)
+		# 		n = np.ceil(time[-1] / period)
+		# 		theta = np.linspace(0, 2 * np.pi * n, d)
+		# 		f = (1 - e * np.cos(theta)) ** -2
+		# 		c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+		# 		t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+		# 		p = np.interp(t, theta, time)
+		# 		plt.grid(True)
+		# 		plots.append(ax.plot(p))
 
 		def update(frame):
 			plots = []
 			for planet in self.planets:
-				e = planet.eccentricity
-				period = planet.period
-				time = np.linspace(0, years, d)
-				n = np.ceil(time[-1] / period)
-				theta = np.linspace(0, 2 * np.pi * n, d)
-				f = (1 - e * np.cos(theta)) ** -2
-				c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
-				t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
-				plots.append(ax.plot(np.interp(t, theta, time), label=planet.name))
+				for e in [0, planet.eccentricity]:
+					period = planet.period
+					time = np.linspace(0, years, d)
+					n = np.ceil(time[-1] / period)
+					theta = np.linspace(0, 2 * np.pi * n, d)
+					f = (1 - e * np.cos(theta)) ** -2
+					c = [1] + [4 if x % 2 == 0 else 2 for x in range(len(theta) - 2)] + [1]
+					t = period * (1 - e ** 2) ** (3 / 2) / (6 * np.pi) / d * np.cumsum(c * f)
+					label = f"{planet.name} Ecc={e:.2f}"
+					plots.append(ax.plot(np.interp(t, theta, time), label=label))
 			plt.legend(loc="upper right")
 			return plots
 
-		anim = FuncAnimation(fig=fig, func=update, frames=2, interval=1000)
+		anim = FuncAnimation(fig=fig, func=update, frames=1, interval=1000)
 
 		if fname == "":
 			fname = f"../images/Task 5/{self.name}"
