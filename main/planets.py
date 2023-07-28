@@ -1,31 +1,41 @@
 # planets
 
 # saving animations requires ffmpeg, otherwise animations can just be displayed
-
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 
-
 # returns true anomaly and heliocentric distance as a function of time
-# solves kepler's equation using kepler's 1621 fixed-point iteration
-def kepler_eq(time, sm_axis, period, eccentricity):
-	n = 2 * np.pi / period  # mean motion
-	M = n * time  # mean anomaly
+# solves kepler's equation using fixed point iteration, bound by convergence criterion (tol)
+def kepler_eq(eccentricity, sm_axis, period, time, tol=1e-8, max_iter=100):
+    n = 2 * math.pi / period # calculate mean motion (n) in radians per day
 
-	# kepler's equation: E = M + eccentricity * sin(E)
-	e = eccentricity
-	E = M
-	for _ in range(10):  # 10 iterations balances accuracy with speed
-		E = M + e * np.sin(E)  # eccentric anomaly
+    Tp = time - (period * math.atan2(e * math.sqrt(1 - e**2), 1 + e)) # calculate time of perihelion passage (Tp)
 
-	# true anomaly theta
-	theta = 2 * np.arctan(np.sqrt((1 + e) / (1 - e)) * np.tan(E / 2))
-	a = sm_axis
-	r = a * (1 - e * np.cos(E))  # heliocentric distance
+    M = (2 * math.pi * (time - Tp)) / period # Calculate mean anomaly (M) at time t
 
-	return theta, r
+    E = M
+    e = eccentricity
+    for _ in range(max_iter): 
+        E_new = M + e * math.sin(E)
+        if abs(E_new - E) < tol:
+            break
+        E = E_new
+
+    a = sm_axis
+    theta = 2 * math.atan2(math.sqrt(1 + e) * math.sin(E / 2), math.sqrt(1 - e) * math.cos(E / 2))
+    r = a * (1 - e * math.cos(E))
+    return theta, r
+
+def sort_p(planets):
+	def k(e):
+		return e.period
+	t = planets
+	t.sort(key=k)
+	return t
+
 
 
 def sort_p(planets):
