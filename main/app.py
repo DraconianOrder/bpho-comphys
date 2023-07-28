@@ -323,8 +323,10 @@ class Viewer(BoxLayout):
 		fn = "temp"
 
 		if task == "1":
-			pass  # need task1.py as a function in planets.PlanetarySystem
+			f = temp.task1("mp4", fn)
+			# pass  # need task1.py as a function in planets.PlanetarySystem
 		elif task == "2":
+			f = temp.plot_orbits(f_ext="mp4", fname=fn)
 			pass  # need planets.PlanetarySystem.plot_orbits() to save file
 		elif task == "3":
 			f = temp.animate_orbits(planet_y, yrs, f_ext="mp4", fname=fn)
