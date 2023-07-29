@@ -22,7 +22,6 @@ def task1():
 	plt.grid(True, which="both")  # grid lines
 	plt.show()
 
-
 	# plot scatter graph to show a^(3/2) ∝ T
 	# where a is the semi-major axis and T is the orbital period
 	x2 = np.array([planet.sm_axis ** (3 / 2) for planet in planets])
@@ -43,3 +42,6 @@ def task1():
 		plt.annotate(planets[i].name, (x2[i], y2[i]), color="g")
 	plt.grid(True)
 	plt.show()
+
+
+task1()
