@@ -131,9 +131,6 @@ class Planet:
 		e = self.eccentricity
 		time = np.linspace(0, yrs, sp)
 		theta, r = kepler_eq(time, a, self.period, e)
-		# lim = yrs * 2 * np.pi
-		# theta = np.linspace(0, lim, sp)
-		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
 		x = r * np.cos(theta) - offset[0]
 		y = r * np.sin(theta) - offset[1]
 		if rt is True:
@@ -159,7 +156,6 @@ class Planet:
 		e = self.eccentricity
 		time = np.linspace(0, yrs, sp)
 		theta, r = kepler_eq(time, a, self.period, e)
-		# r = a * (1 - e ** 2) / (1 + e * np.cos(theta))
 		x = r * np.cos(theta) * np.cos(np.deg2rad(self.inclination)) - offset[0]
 		y = r * np.sin(theta) - offset[1]
 		z = r * np.cos(theta) * np.sin(np.deg2rad(self.inclination)) - offset[2]
@@ -591,9 +587,16 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def ptolemate(self, planet_y, planet_c, yrs=1, fc="#333333", f_ext="", fname=""):
+	def ptolemate(
+		self,
+		planet_y,
+		planet_c,
+		yrs=1,
+		fc="#333333",
+		f_ext="",
+		fname=""
+	):
 		period = planet_y.period
-		# years = yrs * period
 		i = 20
 		frames = int((1000 / i) * yrs)
 		lim = period * yrs
@@ -642,7 +645,8 @@ k ≈ 1.5""",
 			w = f"{yrs:.0f} "
 
 		if fname == "":
-			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} {w}{n} years"
+			c = planet_c.name
+			fname = f"../images/Task 7/{self.name} relative to {c} {w}{n} years"
 
 		if f_ext == "":
 			plt.grid(True)
@@ -657,7 +661,14 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def animate_orbits_3d(self, planet_y, yrs=1, fc="#333333", f_ext="", fname=""):
+	def animate_orbits_3d(
+		self,
+		planet_y,
+		yrs=1,
+		fc="#333333",
+		f_ext="",
+		fname=""
+	):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -737,9 +748,16 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def ptolemate_3d(self, planet_y, planet_c, yrs=1, fc="#333333", f_ext="", fname=""):
+	def ptolemate_3d(
+		self,
+		planet_y,
+		planet_c,
+		yrs=1,
+		fc="#333333",
+		f_ext="",
+		fname=""
+	):
 		period = planet_y.period
-		# years = yrs * period
 		i = 20
 		frames = int((1000 / i) * yrs)
 		lim = period * yrs
@@ -752,12 +770,12 @@ k ≈ 1.5""",
 		for planet in self.planets:
 			a = planet.sm_axis
 			e = planet.eccentricity
-
+			inc = planet.inclination
 			theta, r = kepler_eq(time[0], a, planet.period, e)
 			offset = planet_c.ptol_orbit_3d(ax, yrs=lim, sp=frames + 1, rt=True)
-			x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination)) - offset[0][0]
+			x = r * np.cos(theta) * np.cos(np.deg2rad(inc)) - offset[0][0]
 			y = r * np.sin(theta) - offset[1][0]
-			z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination)) - offset[2][0]
+			z = r * np.cos(theta) * np.sin(np.deg2rad(inc)) - offset[2][0]
 			p = ax.scatter(x, y, z, label=planet.name)
 			plots.append(p)
 			ax.set(
@@ -774,12 +792,12 @@ k ≈ 1.5""",
 			for c, planet in enumerate(self.planets):
 				a = planet.sm_axis
 				e = planet.eccentricity
-
+				inc = planet.inclination
 				theta, r = kepler_eq(time[frame], a, planet.period, e)
 
-				x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination)) - offset[0][frame]
+				x = r * np.cos(theta) * np.cos(np.deg2rad(inc)) - offset[0][frame]
 				y = r * np.sin(theta) - offset[1][frame]
-				z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination)) - offset[2][frame]
+				z = r * np.cos(theta) * np.sin(np.deg2rad(inc)) - offset[2][frame]
 				data = np.stack([x, y]).T
 				plots[c].set_offsets(data)
 				plots[c].set_3d_properties(z, "z")
@@ -792,7 +810,8 @@ k ≈ 1.5""",
 			w = f"{yrs:.0f} "
 
 		if fname == "":
-			fname = f"../images/Task 7/{self.name} relative to {planet_c.name} with {w}{n} Years 3D"
+			x = planet_c.name
+			fname = f"../images/Task 7/{self.name} relative to {x} with {w}{n} Years 3D"
 
 		if f_ext == "":
 			plt.grid(True)
@@ -807,7 +826,15 @@ k ≈ 1.5""",
 			return fn
 		plt.close()
 
-	def spirograph(self, planet_y, yrs=10, fc="#000000", f_ext="", line=False, fname=""):
+	def spirograph(
+		self,
+		planet_y,
+		yrs=10,
+		fc="#000000",
+		f_ext="",
+		line=False,
+		fname=""
+	):
 		period = planet_y.period
 		years = yrs * self.planets[-1].period / period
 		i = 20
@@ -888,6 +915,119 @@ k ≈ 1.5""",
 
 		if fname == "":
 			fname = f"../images/Task 6/{temp} Spirograph with {w}{n} years{v}"
+
+		if f_ext == "":
+			plt.show()
+		elif f_ext == "html":
+			with open(f"{fname}.html", "w") as f:
+				print(anim.to_html5_video(), file=f)
+		else:
+			fn = f"{fname}.{f_ext}"
+			anim.save(fn, writer="ffmpeg")
+			plt.close()
+			return fn
+		plt.close()
+
+	def spirograph_3d(
+		self,
+		planet_y,
+		yrs=10,
+		fc="#000000",
+		f_ext="",
+		line=False,
+		fname=""
+	):
+		period = planet_y.period
+		years = yrs * self.planets[-1].period / period
+		i = 20
+		frames = int((1000 / i) * years)
+		lim = period * years
+		time = np.linspace(0, lim, frames + 1)
+		plots = []
+		fig = plt.figure()
+		ax = fig.add_subplot(111, projection="3d")
+		if self.star is not None:
+			ax.scatter(
+				0,
+				0,
+				0,
+				s=self.star.size,
+				c=self.star.color,
+				marker=self.star.marker,
+				label=self.star.name)
+		x_array = []
+		y_array = []
+		z_array = []
+		for planet in self.planets:
+			if line is True:
+				planet.plot_orbit_3d(fig, ax)
+			a = planet.sm_axis
+			e = planet.eccentricity
+
+			theta, r = kepler_eq(time[0], a, planet.period, e)
+
+			x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination))
+			y = r * np.sin(theta)
+			z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination))
+			x_array.append(x)
+			y_array.append(y)
+			z_array.append(z)
+			p = ax.scatter(x, y, z, s=20, label=planet.name)
+			plots.append(p)
+			ax.set(
+				aspect="equal",
+				xlabel="x / AU",
+				ylabel="y / AU",
+				zlabel="z / AU",
+				xlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				ylim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				zlim=[-a * (e + 1) * 1.2, a * (e + 1) * 1.2],
+				facecolor=fc)
+			ax.legend(loc="upper right")
+
+		def update(frame):
+			ax.set(
+				title=f"{self.name}: t={time[frame] / period:.3f} {planet_y.name} years")
+			v = []
+			w = []
+			u = []
+			for c, planet in enumerate(self.planets):
+				a = planet.sm_axis
+				e = planet.eccentricity
+
+				theta, r = kepler_eq(time[frame], a, planet.period, e)
+
+				x = r * np.cos(theta) * np.cos(np.deg2rad(planet.inclination))
+				y = r * np.sin(theta)
+				z = r * np.cos(theta) * np.sin(np.deg2rad(planet.inclination))
+				v.append(x)
+				w.append(y)
+				u.append(z)
+				data = np.stack([x, y]).T
+				plots[c].set_offsets(data)
+				plots[c].set_3d_properties(z, "z")
+			for b in range(len(v)):
+				for d in range(len(v)):
+					ax.plot(
+						[v[b], v[d]], [w[b], w[d]], [u[b], u[d]], "-w", lw="0.5", alpha=0.2)
+
+			return tuple(plots)
+
+		anim = FuncAnimation(fig=fig, func=update, frames=frames, interval=i)
+		temp = ""
+		for u in self.planets:
+			temp += u.name + "-"
+		temp = temp[:-1]
+		n = planet_y.name
+		w = ""
+		if yrs != 1:
+			w = f"{yrs * self.planets[-1].period / period:.0f} "
+		v = ""
+		if line is True:
+			v = " and line"
+
+		if fname == "":
+			fname = f"../images/Task 6/{temp} Spirograph 3D with {w}{n} years{v}"
 
 		if f_ext == "":
 			plt.show()
