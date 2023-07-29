@@ -1,3 +1,6 @@
+# kivy app (orbits)
+# uses planets module and orbits.kv
+
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -14,6 +17,7 @@ from random import choice
 import planets
 
 
+# button to toggle collapse sidebar
 class CollapseBtn(Button):
 	def toggle_sidebar(self):
 		if self.parent.sidebar.size_hint_x == 0.25:
@@ -27,25 +31,26 @@ class CollapseBtn(Button):
 			self.text = "<"
 
 
+# button to submit options
 class SubmitBtn(Button):
 	def __init__(self, **kwargs):
 		super(SubmitBtn, self).__init__(**kwargs)
 		self.height = 14
 		self.size_hint_x = 0.4
-		# self.size_hint_y = 0.7
 		self.pos_hint = {"center_x": 0.5}
 		self.text = "Submit"
 
 
+# button to generate graphic
 class GenerateBtn(Button):
 	def __init__(self, **kwargs):
 		super(GenerateBtn, self).__init__(**kwargs)
 		self.height = 20
-		# self.size_hint_x = 0.2
 		self.size_hint_y = 0.1
 		self.text = "Generate graphic"
 
 
+# layout holding a label and checkbox for selecting true/false options
 class CheckOption(GridLayout):
 	selected = False
 
@@ -63,6 +68,7 @@ class CheckOption(GridLayout):
 		self.add_widget(self.box)
 
 
+# menu with checkoptions for pre-defined bodies i.e. solar system planets
 class PresetsMenu(BoxLayout):
 	select = {}
 
@@ -74,7 +80,6 @@ class PresetsMenu(BoxLayout):
 				pass
 			finally:
 				pass
-		# print(self.select)
 
 	def __init__(self, **kwargs):
 		super(PresetsMenu, self).__init__(**kwargs)
@@ -93,6 +98,7 @@ class PresetsMenu(BoxLayout):
 		self.size_hint_min_y = len(self.children) * 40
 
 
+# layout with label and textinput to allow numbers and names to be inputted
 class CustomInput(GridLayout):
 	selected = ""
 
@@ -112,6 +118,8 @@ class CustomInput(GridLayout):
 		self.add_widget(self.txin)
 
 
+# group of custominputs that define a custom planet
+# takes in name, semi-major axis, orbital period, eccentricity, inclination
 class CustomPlanet(BoxLayout):
 	pl_select = {}
 
@@ -170,6 +178,8 @@ class CustomPlanet(BoxLayout):
 		self.size_hint_min_y = len(self.children) * 36
 
 
+# menu that allows users to "create" a custom planet/satellite
+# allows for comparing orbits of solar system dwarf planets or exoplanets
 class CustomMenu(BoxLayout):
 	select = []
 
@@ -197,6 +207,7 @@ class CustomMenu(BoxLayout):
 		self.size_hint_min_y = len(self.children) * 28 * 7
 
 
+# menu with additional options, mainly regarding how the graphic is displayed
 class AddMenu(BoxLayout):
 	select = {}
 
@@ -242,6 +253,7 @@ class AddMenu(BoxLayout):
 		self.size_hint_min_y = len(self.children) * 48
 
 
+# contains generate button and graphic viewer
 class Viewer(BoxLayout):
 	options = []
 
@@ -260,13 +272,10 @@ class Viewer(BoxLayout):
 			if bool(presets[n]) is True:
 				p = next((x for x in planets.pre if x.name == n), None)
 				display.append(p)
-		print(display)
 
 		# options from custom
 		custom = self.parent.parent.parent.parent.accordion.a2.custom_menu.select
-		print(custom)
 		display += custom
-		print(display)
 
 		# additional options
 		a = self.parent.parent.parent.parent.accordion.a3.add_menu.select
@@ -282,21 +291,16 @@ class Viewer(BoxLayout):
 			"3d": bool(a["3D? (#6, #7 only)"])
 		}
 
-		self.options = [presets, custom, a]
-		print(self.options)
-
 		t = []
 		x = []
 		for n in display:
 			if str(type(n)) == "<class 'planets.PlanetarySystem'>":
-				print(n.name)
 				t += n.planets
 				x.append(n)
 		for i in x:
 			display.remove(i)
 
 		d = display + t
-		print(d)
 		if presets["Sun"] is True:
 			temp = planets.PlanetarySystem("Custom", d[0], d[1:])
 		else:
@@ -314,6 +318,8 @@ class Viewer(BoxLayout):
 		fc = addt["facecolor"] if addt["facecolor"] != "" else "#000000"
 		fn = "temp"
 
+		# change what generate button does according to task selected on sidebar
+		# if no task is selected it will do nothing
 		if task == "1":
 			f = temp.task1(fc, "mp4", fn)
 		elif task == "2":
@@ -327,8 +333,11 @@ class Viewer(BoxLayout):
 				yrs = 5
 			f = temp.task5(planet_y, yrs, fc, "mp4", fn)
 		elif task == "6":
-			# add option for 2d/3d?
-			f = temp.spirograph(planet_y, yrs, fc, f_ext="mp4", fname=fn)
+			# option for 2d/3d
+			if addt["3d"] is True:
+				f = temp.spirograph_3d(planet_y, yrs, fc, f_ext="mp4", fname=fn)
+			else:
+				f = temp.spirograph(planet_y, yrs, fc, f_ext="mp4", fname=fn)
 		elif task == "7":
 			# option for 2d/3d
 			if addt["3d"] is True:
@@ -348,12 +357,11 @@ class Viewer(BoxLayout):
 		self.gen_btn = GenerateBtn()
 		self.add_widget(self.gen_btn)
 		self.gen_btn.bind(on_press=self.generate)
-		# self.add_widget(Label(text="Hello World"))
 		self.video = VideoPlayer()
 		self.add_widget(self.video)
-		print(self.options)
 
 
+# accordion containing presets, custom, additional options + viewer
 class Main(Accordion):
 	a1 = ObjectProperty(None)
 	a2 = ObjectProperty(None)
@@ -364,6 +372,7 @@ class Main(Accordion):
 		super(Main, self).__init__(**kwargs)
 
 
+# sidebar with toggle buttons for task selection
 class Sidebar(BoxLayout):
 	selected = None
 
@@ -390,6 +399,7 @@ class Sidebar(BoxLayout):
 			i.bind(state=self.check)
 
 
+# holds sidebar, collapse button and main accordion
 class Frame(BoxLayout):
 	sidebar = ObjectProperty(None)
 	collapse_btn = ObjectProperty(None)
